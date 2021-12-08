@@ -3,6 +3,7 @@ import numpy as np
 import os
 import json
 from torchvision import transforms
+from pycocotools.coco import COCO
 
 class ResizeImage():
     def __init__(self, size):
@@ -84,15 +85,54 @@ def main_loading_function(path):
 def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))
   #  main_loading_function(dir_path+"../TACO"):
-    load_taco()
-
-def load_taco(dataset_dir):
-    ann_filepath = os.path.join(dataset_dir , 'annotations.json')
-    dataset = json.load(open(ann_filepath, 'r'))
-    print(dataset)
+    dataset_train = Taco()
+    dataset_train.load_taco(dir_path+"/../TACO/data")
 
 
+class Taco():
+    def __init__(self, class_map=None):
+        self._image_ids = []
+        self.image_info = []
+        # Background is always the first class
+        self.class_info = [{"source": "", "id": 0, "name": "BG"}]
+        self.source_class_ids = {}
 
+    def add_image(self, source, image_id, path, **kwargs):
+        image_info = {
+                "id": image_id,
+                "source": source,
+                "path": path,
+                }
+        image_info.update(kwargs)
+        self.image_info.append(image_info)
+
+    def load_taco(self, dataset_dir):
+        ann_filepath = os.path.join(dataset_dir , 'annotations.json')
+        dataset = json.load(open(ann_filepath, 'r'))
+        taco_alla_coco = COCO()
+        taco_alla_coco.dataset = dataset
+        taco_alla_coco.createIndex()
+        image_ids = []
+        class_names = []
+        class_ids = sorted(taco_alla_coco.getCatIds())
+        for i in class_ids:
+            class_name = taco_alla_coco.loadCats(i)[0]["name"]
+            if class_name != 'Background':
+                #self.add_class("taco", i, class_name)
+                class_names.append(class_name)
+                image_ids.extend(list(taco_alla_coco.getImgIds(catIds=i)))
+            else:
+                background_id = i
+        image_ids = list(set(image_ids))
+
+        for i in image_ids:
+            self.add_image(
+                    "taco", image_id=i,
+                    path=os.path.join(dataset_dir, taco_alla_coco.imgs[i]['file_name']),
+                    width=taco_alla_coco.imgs[i]["width"],
+                    height=taco_alla_coco.imgs[i]["height"],
+                    annotations=taco_alla_coco.loadAnns(taco_alla_coco.getAnnIds(
+                        imgIds=[i], catIds=class_ids, iscrowd=None)))
 
 if __name__ == '__main__':
     main()
