@@ -17,6 +17,7 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
 
     Inputs: 
     - train_logits: [N_train, N_source_labels] f_0(x) logits for the source domain training data
+        signifying p(y_s | x)
     - train_labels: [N_train] Corresponding target domain labels for the training data, where
         0 <= each number < N_target_labels
     - validation_logits: [N_val, N_source_labels] f_0(x) logits for the source domain validation data
