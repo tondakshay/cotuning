@@ -55,7 +55,7 @@ def main():
             torch.nn.init.normal_(self.categ_net_2.weight, 0, 0.01)
             torch.nn.init.constant_(self.categ_net_2.bias, 0.0)
 
-        def forward(x):
+        def forward(self, x):
             features = self.feature_net(x)
             out_1 = self.categ_net_1(features)
             out_2 = self.categ_net_2(features)
