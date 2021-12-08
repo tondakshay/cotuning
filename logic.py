@@ -68,9 +68,8 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
 
 def calibrate(logits, labels):
     """
-    Returns scale = 1/t_best, the inverse of the optimal logit scaling parameter
-    t_best (denoted as t* in the paper), where the cross entropy loss for scaled
-    logits wrt labels is minimized.
+    Returns optimal logit scaling parameter t_best (denoted as t* in the paper),
+    where cross entropy loss for scaled logits wrt labels is minimized.
 
     Inputs:
     - logits: [N] Vector of logits to calibrate
@@ -80,4 +79,17 @@ def calibrate(logits, labels):
     - t_best: [float] t for which cross_entropy loss for logits scaled down by t
         wrt to the labels is minimized
     """
-    pass
+    t = nn.Paramter(torch.as_tensor([[1]]),requires_grad = True)
+    optim = torch.optim.LBFGS([t])
+
+    def loss():
+        optim.zero_grad()
+        cost = nn.CrossEntropyLoss()(logits*t, labels)
+        cost.backward()
+        return cost
+
+    for i in range(20):
+        optim.step(loss)
+        print("Calibrating: ", t.item())
+    
+    return t.item()
