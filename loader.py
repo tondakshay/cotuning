@@ -1,7 +1,22 @@
 from torchvision import datasets
 import numpy as np
 import os
+<<<<<<< HEAD
 import json
+=======
+from torchvision import transforms
+
+class ResizeImage():
+    def __init__(self, size):
+        if isinstance(size, int):
+            self.size = (int(size), int(size))
+        else:
+            self.size = size
+
+    def __call__(self, img):
+        th, tw = self.size
+        return img.resize((th, tw))
+>>>>>>> changes
 
 def training_transforms(resize_size=256, crop_size=224):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -27,14 +42,14 @@ def validation_transforms(resize_size=256, crop_size=224):
         normalize
     ])
 
-def test_transforms(resize_size=256, crop_size=224)):
+#def test_transforms(resize_size=256, crop_size=224):
 
 def get_transforms_for_torch(resize_size=256, crop_size=224):
     transforms = {
             'train': training_transforms(resize_size, crop_size),
             'val': validation_transforms(resize_size, crop_size),
         }
-        transforms.update(test_transforms(resize_size, crop_size))
+    transforms.update(test_transforms(resize_size, crop_size))
 
     return transforms
 
@@ -50,9 +65,10 @@ def main_loading_function(path):
         transform=data_transforms['val'])
     test_dataset = {
         'test' + str(i):
-            datasets.ImageFolder(os.path.join(path,'test')),
+            datasets.ImageFolder(os.path.join(path,'test'),
                                  transform = data_transformms["test" + str(i)]
-        for i in range(5):
+            )
+        for i in range(5)
     }
 
     train_loader = DataLoader(train_dataset,batch_size = 10, shuffle = True)
@@ -62,7 +78,7 @@ def main_loading_function(path):
             DataLoader(
                 test_datasets["test" + str(i)],
                 batch_size=4, shuffle=False, num_workers=configs.num_workers
-        )
+            )
         for i in range(10)
     }
 
