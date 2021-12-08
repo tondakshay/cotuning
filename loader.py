@@ -1,5 +1,6 @@
 from torchvision import datasets
 import numpy as np
+import os
 
 def training_transforms(resize_size=256, crop_size=224):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -65,3 +66,14 @@ def main_loading_function(path):
     }
 
     return train_loader, val_loader, test_loaders
+
+def main():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    main_loading_function(dir_path+"../TACO"):
+
+
+
+
+
+if __name__ == '__main__':
+    main()
