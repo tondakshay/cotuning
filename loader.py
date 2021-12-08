@@ -1,9 +1,7 @@
 from torchvision import datasets
 import numpy as np
 import os
-<<<<<<< HEAD
 import json
-=======
 from torchvision import transforms
 
 class ResizeImage():
@@ -16,7 +14,6 @@ class ResizeImage():
     def __call__(self, img):
         th, tw = self.size
         return img.resize((th, tw))
->>>>>>> changes
 
 def training_transforms(resize_size=256, crop_size=224):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
