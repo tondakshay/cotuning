@@ -1,6 +1,7 @@
 from torchvision import datasets
 import numpy as np
 import os
+import json
 
 def training_transforms(resize_size=256, crop_size=224):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -69,8 +70,13 @@ def main_loading_function(path):
 
 def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    main_loading_function(dir_path+"../TACO"):
+  #  main_loading_function(dir_path+"../TACO"):
+    load_taco()
 
+def load_taco(dataset_dir):
+    ann_filepath = os.path.join(dataset_dir , 'annotations.json')
+    dataset = json.load(open(ann_filepath, 'r'))
+    print(dataset)
 
 
 
