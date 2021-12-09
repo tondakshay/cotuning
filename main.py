@@ -87,3 +87,19 @@ def main():
 
                 inputs, label = inputs.cuda(), label.cuda()
                 source_logits, _ = net(inputs)
+                source_logits = source_logits.detach().cpu().numpy()
+
+                logits_list.append(source_logits)
+            
+            all_logits = np.concatenate(logits_list, axis=0)
+            all_labels = np.concatenate(labels_list, axis=0)
+            return all_logits, all_labels
+        
+        rel_train_logits, rel_train_labels = get_features(rel_train_loader)
+        rel_val_logits, rel_val_labels = get_features(val_loader)
+
+        relationship = relationship_learning(
+            rel_train_logits, rel_train_labels,
+            rel_val_logits, rel_val_labels
+        )
+                
