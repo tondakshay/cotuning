@@ -54,20 +54,27 @@ def get_transforms_for_torch(resize_size=256, crop_size=224):
 def main_loading_function(path):
     transforms  = get_transforms_for_torch(resize_size = 256, crop_size = 224)
 
+
+    dataset = Taco()
+    coco_obj = dataset_train.load_taco(dir_path + "/../TACO/data")
     #build dataset objects in torch format
-    train_dataset = datasets.ImageFolder(
-        os.path.join(configs.data_path, 'train'),
-        transform=data_transforms['train'])
+    train_dataset = {
+            'test' + str(i):
+            datasets.ImageFolder(os.path.join(dataset.dataset_path, '/batch' + str(i)),
+            transform=data_transforms['train'])
+            for i in range (17)
+        }
+
     val_dataset = datasets.ImageFolder(
-        os.path.join(configs.data_path, 'val'),
+        os.path.join(dataset.data_path, '/batch18'),
         transform=data_transforms['val'])
     test_dataset = {
         'test' + str(i):
             datasets.ImageFolder(os.path.join(path,'test'),
                                  transform = data_transformms["test" + str(i)]
             )
-        for i in range(5)
-    }
+            for i in range(18:25)
+        }
 
     train_loader = DataLoader(train_dataset,batch_size = 10, shuffle = True)
     val_loader = DataLoader(val_dataset,batch_size = 10, shuffle = True)
@@ -91,6 +98,7 @@ def main():
 
 class Taco():
     def __init__(self, class_map=None):
+        self.dataset_path = ""
         self._image_ids = []
         self.image_info = []
         # Background is always the first class
@@ -131,6 +139,7 @@ class Taco():
         self.image_info.append(image_info)
 
     def load_taco(self, dataset_dir):
+        self.dataset_path = dataset_dir + "/data"
         ann_filepath = os.path.join(dataset_dir , 'annotations.json')
         dataset = json.load(open(ann_filepath, 'r'))
         taco_alla_coco = COCO()
