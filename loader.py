@@ -4,6 +4,34 @@ import os
 import json
 from torchvision import transforms
 from pycocotools.coco import COCO
+from torch.utils.data import DataLoader
+
+class PlaceCrop(object):
+    """Crops the given PIL.Image at the particular index.
+    Args:
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (w, h), a square crop (size, size) is
+            made.
+    """
+
+    def __init__(self, size, start_x, start_y):
+        if isinstance(size, int):
+            self.size = (int(size), int(size))
+        else:
+            self.size = size
+        self.start_x = start_x
+        self.start_y = start_y
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Image to be cropped.
+        Returns:
+            PIL.Image: Cropped image.
+        """
+        th, tw = self.size
+        return img.crop((self.start_x, self.start_y, self.start_x + tw, self.start_y + th))
+
 
 class ResizeImage():
     def __init__(self, size):
@@ -39,55 +67,69 @@ def validation_transforms(resize_size=256, crop_size=224):
         transforms.ToTensor(),
         normalize
     ])
+def test_transforms(resize_size=256, crop_size=224):
 
-#def test_transforms(resize_size=256, crop_size=224):
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+    start_center = (resize_size - crop_size - 1) / 2
+
+    return transforms.Compose([
+        ResizeImage(resize_size),
+        PlaceCrop(crop_size, start_center, start_center),
+        transforms.ToTensor(),
+        normalize
+    ])
+
+
 
 def get_transforms_for_torch(resize_size=256, crop_size=224):
     transforms = {
             'train': training_transforms(resize_size, crop_size),
             'val': validation_transforms(resize_size, crop_size),
+            'test' : test_transforms(resize_size, crop_size)
         }
-    transforms.update(test_transforms(resize_size, crop_size))
 
     return transforms
 
-def main_loading_function():
+def main_loading_function(dir_path):
     transforms  = get_transforms_for_torch(resize_size = 256, crop_size = 224)
 
-
     dataset = Taco()
-    coco_obj = dataset_train.load_taco(dir_path + "/../TACO/data")
+    coco_obj = dataset.load_taco(dir_path + "/../TACO/data")
+    print(dataset.dataset_path)
     #build dataset objects in torch format
     train_dataset = {
-            'test' + str(i):
-            datasets.ImageFolder(os.path.join(dataset.dataset_path, '/batch' + str(i)),
-            transform=data_transforms['train'])
-            for i in range (17)
-        }
+        'test' + str(i):
+            datasets.ImageFolder(dataset.dataset_path,
+            transform=transforms['train']
+        )
+        for i in range (1,17)
+    }
 
     val_dataset = datasets.ImageFolder(
-        os.path.join(dataset.data_path, '/batch18'),
-        transform=data_transforms['val'])
+        os.path.join(dataset.dataset_path),
+        transform = transforms['val'])
+
     test_dataset = {
         'test' + str(i):
-            datasets.ImageFolder(os.path.join(path,'test'),
-                                 transform = data_transformms["test" + str(i)]
+            datasets.ImageFolder(dataset.dataset_path,
+            transform = transforms["test"]
             )
-            for i in range(18,25)
-        }
+        for i in range(18,25)
+    }
 
     train_loader = DataLoader(train_dataset,batch_size = 10, shuffle = True)
     val_loader = DataLoader(val_dataset,batch_size = 10, shuffle = True)
     test_loader = {
         'test' + str(i):
             DataLoader(
-                test_datasets["test" + str(i)],
-                batch_size=4, shuffle=False, num_workers=configs.num_workers
+                test_dataset['test' + str(i)],
+                batch_size=4, shuffle=False
             )
-        for i in range(10)
+        for i in range(18,25)
     }
 
-    return train_loader, val_loader, test_loaders
+    return train_loader, val_loader, test_loader
 
 def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -139,7 +181,7 @@ class Taco():
         self.image_info.append(image_info)
 
     def load_taco(self, dataset_dir):
-        self.dataset_path = dataset_dir + "/data"
+        self.dataset_path = dataset_dir 
         ann_filepath = os.path.join(dataset_dir , 'annotations.json')
         dataset = json.load(open(ann_filepath, 'r'))
         taco_alla_coco = COCO()

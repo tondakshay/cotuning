@@ -61,7 +61,9 @@ def main():
 
     # Get loaders for the data for training the final model,
     # relationship learning training, validation data, and test data
-    train_loader, val_loader, test_loaders = main_loading_function()
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    train_loader, val_loader, test_loaders = main_loading_function(dir_path)
 
     # Define the Neural network class and object which simultaneously predicts source
     # and target domain logits
@@ -83,7 +85,7 @@ def main():
 
             return out_1, out_2
     
-    net = Net().cuda()    # or just Net() ?
+    net = Net()#.cuda()    # or just Net() ?
     # Obtain the relationship p(y_s | y_t)
     if os.path.exists(configs.relationship_path):
         print(f"Loading relationship from path: {configs.relationship_path}")
