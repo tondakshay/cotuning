@@ -4,7 +4,7 @@ import os
 import json
 from torchvision import transforms
 from pycocotools.coco import COCO
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, DataLoader
 
 class PlaceCrop(object):
     """Crops the given PIL.Image at the particular index.
@@ -99,11 +99,10 @@ def main_loading_function(dir_path):
     print(dataset.dataset_path)
     #build dataset objects in torch format
     train_dataset = {
-        'test' + str(i):
+        'train':
             datasets.ImageFolder(dataset.dataset_path,
             transform=transforms['train']
         )
-        for i in range (1,17)
     }
 
     val_dataset = datasets.ImageFolder(
@@ -209,6 +208,14 @@ class Taco():
                     annotations=taco_alla_coco.loadAnns(taco_alla_coco.getAnnIds(
                         imgIds=[i], catIds=class_ids, iscrowd=None)))
         return taco_alla_coco
+
+class TACO_Dataset(Dataset):
+    def __init__(self, annotations_file_path, img_dir, transform=None, target_transform=None):
+	with open(annotations_file_path, 'r') as f:
+	    annotations_json = json.loads(f.read())
+
+
+
 
 if __name__ == '__main__':
     main()

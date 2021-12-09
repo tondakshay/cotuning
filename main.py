@@ -94,19 +94,19 @@ def main():
     else:
         print("Computing the relationsip...")
 
-        os.makedirs(os.path.dirname(configs.relationship_path))
+        os.makedirs(os.path.dirname(configs.relationship_path), exist_ok=True)
         if os.path.basename(configs.relationship_path) == "":
             configs.relationship_path = os.path.join(configs.relationship_path, "relationship.npy")
         
-        def get_features(loader):
+        def get_features(ldr):
             labels_list = []
             logits_list = []
 
             net.eval()
-            for inputs, label in tqdm(loader):
+            for inputs, label in tqdm(ldr):
                 labels_list.append(label)
 
-                inputs, label = inputs.cuda(), label.cuda()
+                # inputs, label = inputs.cuda(), label.cuda()
                 source_logits, _ = net(inputs)
                 source_logits = source_logits.detach().cpu().numpy()
 
@@ -116,7 +116,7 @@ def main():
             all_labels = np.concatenate(labels_list, axis=0)
             return all_logits, all_labels
         
-        rel_train_logits, rel_train_labels = get_features(rel_train_loader)
+        rel_train_logits, rel_train_labels = get_features(train_loader)
         rel_val_logits, rel_val_labels = get_features(val_loader)
 
         relationship = relationship_learning(
