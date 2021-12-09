@@ -97,6 +97,30 @@ class Taco():
         self.class_info = [{"source": "", "id": 0, "name": "BG"}]
         self.source_class_ids = {}
 
+    def load_image(self, image_id):
+        """Load the specified image and return as a [H,W,3] Numpy array."""
+        # Load image. TODO: do this with opencv to avoid need to correct orientation
+        image = Image.open(self.image_info[image_id]['path'])
+        img_shape = np.shape(image)
+        # load metadata
+        exif = image._getexif()
+        if exif:
+            exif = dict(exif.items())
+            # Rotate portrait images if necessary (274 is the orientation tag code)
+            if 274 in exif:
+                if exif[274] == 3:
+                    image = image.rotate(180, expand=True)
+                if exif[274] == 6:
+                    image = image.rotate(270, expand=True)
+                if exif[274] == 8:
+                    image = image.rotate(90, expand=True)
+
+            # If has an alpha channel, remove it for consistency
+        if img_shape[-1] == 4:
+            image = image[..., :3]
+        return np.array(image)
+
+
     def add_image(self, source, image_id, path, **kwargs):
         image_info = {
                 "id": image_id,
@@ -133,6 +157,7 @@ class Taco():
                     height=taco_alla_coco.imgs[i]["height"],
                     annotations=taco_alla_coco.loadAnns(taco_alla_coco.getAnnIds(
                         imgIds=[i], catIds=class_ids, iscrowd=None)))
+        return taco_alla_coco
 
 if __name__ == '__main__':
     main()
