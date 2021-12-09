@@ -51,7 +51,7 @@ def get_transforms_for_torch(resize_size=256, crop_size=224):
 
     return transforms
 
-def main_loading_function(path):
+def main_loading_function():
     transforms  = get_transforms_for_torch(resize_size = 256, crop_size = 224)
 
 
@@ -73,7 +73,7 @@ def main_loading_function(path):
             datasets.ImageFolder(os.path.join(path,'test'),
                                  transform = data_transformms["test" + str(i)]
             )
-            for i in range(18:25)
+            for i in range(18,25)
         }
 
     train_loader = DataLoader(train_dataset,batch_size = 10, shuffle = True)

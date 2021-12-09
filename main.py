@@ -23,8 +23,23 @@ def get_configs():
         description="Co-tuning training implementation for EECS 545"
     )
 
-    parser.add_argument()
-    return {}  # TODO using argparse
+    # train
+    parser.add_argument("--gpu", default=0, type=int,
+            help="GPU num for training")
+    parser.add_argument("--seed", type=int, default=2021)
+
+    # dataset
+    parser.add_argument("--classes_num", default=60, type=int,
+            help="Number of target domain classes")
+
+    # experiment
+    parser.add_argument("--relationship_path",
+            default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/relationship.npy",
+            type=str,
+            help="Path of pre-computed relationship")
+
+    configs = parser.parse_args()
+    return configs
 
 
 def set_seeds(seed):
@@ -41,7 +56,7 @@ def set_seeds(seed):
 def main():
     configs = get_configs()
     print(configs)
-    torch.cuda.set_device(configs.gpu)
+    # torch.cuda.set_device(configs.gpu)
     set_seeds(configs.seed)
 
     # Get loaders for the data for training the final model,
@@ -69,7 +84,6 @@ def main():
             return out_1, out_2
     
     net = Net().cuda()    # or just Net() ?
-
     # Obtain the relationship p(y_s | y_t)
     if os.path.exists(configs.relationship_path):
         print(f"Loading relationship from path: {configs.relationship_path}")
@@ -108,6 +122,7 @@ def main():
             rel_val_logits, rel_val_labels
         )
     
+    print(relationship)
     train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
