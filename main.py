@@ -19,6 +19,11 @@ def get_configs():
     """
     Returns a dictionary containing configuration parameters parsed from script arguments.
     """
+    parser = argparse.ArgumentParser(
+        description="Co-tuning training implementation for EECS 545"
+    )
+
+    parser.add_argument()
     return {}  # TODO using argparse
 
 
@@ -108,5 +113,5 @@ def main():
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     pass
 
-if __name__ == "main":
+if __name__ == "__main__":
     main()
