@@ -102,4 +102,11 @@ def main():
             rel_train_logits, rel_train_labels,
             rel_val_logits, rel_val_labels
         )
+    
+    train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
+def train(configs, train_loader, val_loader, test_loaders, net, relationship):
+    pass
+
+if __name__ == "main":
+    main()
