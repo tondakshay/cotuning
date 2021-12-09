@@ -1,2 +1,2 @@
-# cotuning
-EECS-545 project repositor
+# Co-Tuning for Transfer Learning
+EECS-545 project repository
