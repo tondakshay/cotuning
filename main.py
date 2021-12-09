@@ -63,3 +63,26 @@ def main():
             return out_1, out_2
     
     net = Net().cuda()    # or just Net() ?
+
+    # Obtain the relationship p(y_s | y_t)
+    if os.path.exists(configs.relationship_path):
+        print(f"Loading relationship from path: {configs.relationship_path}")
+        relationship = np.load(configs.relationship_path)
+
+    else:
+        print("Computing the relationsip...")
+
+        os.makedirs(os.path.dirname(configs.relationship_path))
+        if os.path.basename(configs.relationship_path) == "":
+            configs.relationship_path = os.path.join(configs.relationship_path, "relationship.npy")
+        
+        def get_features(loader):
+            labels_list = []
+            logits_list = []
+
+            net.eval()
+            for inputs, label in tqdm(loader):
+                labels_list.append(label)
+
+                inputs, label = inputs.cuda(), label.cuda()
+                source_logits, _ = net(inputs)
