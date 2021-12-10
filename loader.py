@@ -98,7 +98,6 @@ def main_loading_function(dir_path):
 
     dataset = Taco()
     coco_obj = dataset.load_taco(dir_path + "/../TACO/data")
-    print(dataset.dataset_path)
     #build dataset objects in torch format
     train_dataset = {
         'train':
@@ -214,6 +213,7 @@ class Taco():
                     height=taco_alla_coco.imgs[i]["height"],
                     annotations=taco_alla_coco.loadAnns(taco_alla_coco.getAnnIds(
                         imgIds=[i], catIds=class_ids, iscrowd=None)))
+        print( self.image_info[1])
         return taco_alla_coco
 
 class TACO_Dataset(Dataset):

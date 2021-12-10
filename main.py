@@ -128,7 +128,100 @@ def main():
     train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
-    pass
+    total_iters = 5
+    train_len = len(train_loader) - 1
+    train_iter = iter(train_loader)
+    optimizer = torch.optim.SGD(params_list)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR( optimizer, milestones)
+    for iter_num in range(total_iters):
+#Turning the flag on to set the network into training mode
+        net.train()
+#These are the actual labels against which the loss has to be minimized
+        train_inputs, train_labels = next(train_iter)
+#pushing data to default GPUs
+        imagenet_targets = torch.from_numpy(
+            relationship[train_labels]).cuda().float()
+        train_inputs, train_labels = train_inputs.cuda(), train_labels.cuda()
+        imagenet_outputs, train_outputs = net(train_inputs)
+
+#running the forward pass
+        imagenet_outputs, train_outputs = net(train_inputs)
+        
+#Loss defined for the whole network is the cross entropy loss. CE loss is generally used when the problem is classification based on 'n' number of classes
+        ce_loss = nn.CrossEntropyLoss()(train_outputs, train_labels)
+
+
+        imagenet_loss = - imagenet_targets * nn.LogSoftmax(dim=-1)(imagenet_outputs)
+        loss = ce_loss + configs.trade_off * imagenet_loss
+
+#so the GPU doesn't cry on fast filling memory
+        net.zero_grad()
+        optimizer.zero_grad()
+
+
+        loss.backward()
+        optimizer.step()
+# take a step based on gradient and parameters
+        scheduler.step()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     main()
