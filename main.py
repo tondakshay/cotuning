@@ -11,7 +11,8 @@ from tqdm import tqdm
 
 from logic import relationship_learning
 from backbone import ResNet50_F, ResNet50_C
-from loader import main_loading_function 
+# from loader import main_loading_function 
+from loader import get_loaders
 from loader import Taco
 
 
@@ -62,8 +63,8 @@ def main():
     # Get loaders for the data for training the final model,
     # relationship learning training, validation data, and test data
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    train_loader, val_loader, test_loaders = main_loading_function(dir_path)
+    dir_path = "/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/TACO/data/"
+    train_loader, val_loader, test_loaders = get_loaders(dir_path, os.path.join(dir_path, 'annotations.json'))
 
     # Define the Neural network class and object which simultaneously predicts source
     # and target domain logits

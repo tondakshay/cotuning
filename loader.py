@@ -1,12 +1,13 @@
 import numpy as np
 import os
-import random
 import json
+import torchvision
 from torchvision import transforms, datasets
 from torchvision.io import read_image
 from pycocotools.coco import COCO
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
+from torch import FloatTensor
 
 class PlaceCrop(object):
     """Crops the given PIL.Image at the particular index.
@@ -32,7 +33,8 @@ class PlaceCrop(object):
             PIL.Image: Cropped image.
         """
         th, tw = self.size
-        return img.crop((self.start_x, self.start_y, self.start_x + tw, self.start_y + th))
+        # return img.crop((self.start_x, self.start_y, self.start_x + tw, self.start_y + th))
+        return transforms.functional.crop(img, self.start_y, self.start_x, th, tw)
 
 
 class ResizeImage():
@@ -46,14 +48,20 @@ class ResizeImage():
         th, tw = self.size
         return img.resize((th, tw))
 
+class ToFloatTensor():
+    def __call__(self, tensor):
+        return tensor.type(FloatTensor)
+
 def training_transforms(resize_size=256, crop_size=224):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
     return transforms.Compose([
-        ResizeImage(resize_size),
+        # ResizeImage(resize_size),
+        transforms.Resize((resize_size, resize_size)),
         transforms.RandomResizedCrop(crop_size),
         transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
+        # transforms.ToTensor(),
+        ToFloatTensor(),
         normalize
     ])
 
@@ -64,9 +72,11 @@ def validation_transforms(resize_size=256, crop_size=224):
     start_center = (resize_size - crop_size - 1) / 2
 
     return transforms.Compose([
-        ResizeImage(resize_size),
+        # ResizeImage(resize_size),
+        transforms.Resize((resize_size, resize_size)),
         PlaceCrop(crop_size, start_center, start_center),
-        transforms.ToTensor(),
+        # transforms.ToTensor(),
+        ToFloatTensor(),
         normalize
     ])
 def test_transforms(resize_size=256, crop_size=224):
@@ -76,9 +86,11 @@ def test_transforms(resize_size=256, crop_size=224):
     start_center = (resize_size - crop_size - 1) / 2
 
     return transforms.Compose([
-        ResizeImage(resize_size),
+        # ResizeImage(resize_size),
+        transforms.Resize((resize_size, resize_size)),
         PlaceCrop(crop_size, start_center, start_center),
-        transforms.ToTensor(),
+        # transforms.ToTensor(),
+        ToFloatTensor(),
         normalize
     ])
 
@@ -92,6 +104,73 @@ def get_transforms_for_torch(resize_size=256, crop_size=224):
         }
 
     return transforms
+
+def main():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    get_loaders(dir_path, dir_path)
+    # main_loading_function(dir_path+"../TACO"):
+    # dataset_train = Taco()
+    # dataset_train.load_taco(dir_path+"/../TACO/data")
+
+
+def get_loaders(img_dir, ann_path):
+    transforms = get_transforms_for_torch(resize_size=256, crop_size=224)
+
+    samples = np.random.permutation(4784)    # size of dataset
+    # samples = range(4784)
+    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:4000], transform=transforms['train'])
+    val_dataset = TACO_Dataset(img_dir, ann_path, samples[4000:4200], transform=transforms['val'])
+    test_dataset = TACO_Dataset(img_dir, ann_path, samples[4200:], transform=transforms['test'])
+
+    train_loader = DataLoader(train_dataset, batch_size=10, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=10, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=10, shuffle=True)
+
+    return train_loader, val_loader, test_loader
+
+class TACO_Dataset(Dataset):
+    def __init__(self, img_dir, annotations_file_path, samples=None, transform=None, label_transform=None):
+        self.img_dir = img_dir
+
+        with open(annotations_file_path, 'r') as f:
+            annotations_json = json.loads(f.read())
+        image_dict_list = annotations_json['images']
+        annotations_dict_list = annotations_json['annotations']
+        df1 = pd.DataFrame(image_dict_list, columns=['id', 'width','height', 'file_name'])
+        df2 = pd.DataFrame(annotations_dict_list, columns=['image_id', 'category_id', 'bbox'])
+        df2['bbox'] = df2['bbox'].apply(lambda x:list([int(round(z)) for z in x]))
+
+        self.df = pd.merge(df1, df2, how='left', left_on='id', right_on='image_id')
+        if samples is not None:
+            self.df = self.df.iloc[samples].reset_index()
+
+        # print(f"Dataset size = {len(self.df)}")
+        self.transform = transform
+        self.label_transform = label_transform
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        # print(f"Getting item number {idx}...")
+        img_path = os.path.join(self.img_dir, self.df.iloc[idx].loc['file_name'])
+        image = read_image(img_path)
+        bbox = self.df.loc[idx, 'bbox']
+        image = torchvision.transforms.functional.crop(
+                image,
+                left   = bbox[0],
+                top    = bbox[1],
+                width  = bbox[2],
+                height = bbox[3],
+        )
+
+        label = self.df.iloc[idx].loc['category_id']
+
+        if self.transform:
+            image = self.transform(image)
+        if self.label_transform:
+            label = self.label_transform(label)
+        return image, label
 
 def main_loading_function(dir_path):
     transforms  = get_transforms_for_torch(resize_size = 256, crop_size = 224)
@@ -130,18 +209,6 @@ def main_loading_function(dir_path):
     }
 
     return train_loader, val_loader, test_loader
-
-def get_loaders(img_dir, ann_path):
-    transforms = get_transforms_for_torch(resize_size=256, crop_size=224)
-
-    train_dataset = TACO_Dataset(img_dir, ann_path, 
-
-def main():
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-  #  main_loading_function(dir_path+"../TACO"):
-    dataset_train = Taco()
-    dataset_train.load_taco(dir_path+"/../TACO/data")
-
 
 class Taco():
     def __init__(self, class_map=None):
@@ -215,48 +282,6 @@ class Taco():
                         imgIds=[i], catIds=class_ids, iscrowd=None)))
         print( self.image_info[1])
         return taco_alla_coco
-
-class TACO_Dataset(Dataset):
-    def __init__(self, img_dir, annotations_file_path, samples=None, transform=None, label_transform=None):
-        self.img_dir = img_dir
-
-        with open(annotations_file_path, 'r') as f:
-            annotations_json = json.loads(f.read())
-        images_dict_list = annotations_json['images']
-        annotations_dict_list = annotations_json['annotations']
-        df1 = pd.DataFrame(image_dict_list, columns=['id', 'width','height', 'file_name'])
-        df2 = pd.DataFrame(annotations_dict_list, columns=['image_id', 'category_id', 'bbox'])
-        df2['bbox'] = df2['bbox'].apply(lambda x:list([int(round(z)) for z in x]))
-
-        self.df = pd.merge(df1, df2, how='left', left_on='id', right_on='image_id')
-        if samples is not None:
-            self.df = self.df.iloc[samples]
-
-        self.transform = transform
-        self.label_transform = label_transform
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, idx):
-        img_path = os.path.join(self.img_dir, self.df.loc[idx, 'file_name'])
-        image = read_image(img_path)
-        bbox = self.df.loc[idx, 'bbox']
-        image = torchvision.transforms.functional.crop(
-                image,
-                left   = bbox[0],
-                top    = bbox[1],
-                width  = bbox[2],
-                height = bbox[3],
-        )
-
-        label = self.df.loc[idx, 'category_id']
-
-        if self.transform:
-            image = self.transform(image)
-        if self.label_transform:
-            label = self.label_transform(label)
-        return image, label
 
 
 
