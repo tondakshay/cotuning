@@ -121,9 +121,9 @@ def get_loaders(img_dir, ann_path):
     # train_dataset = TACO_Dataset(img_dir, ann_path, samples[:4000], transform=transforms['train'])
     # val_dataset = TACO_Dataset(img_dir, ann_path, samples[4000:4200], transform=transforms['val'])
     # test_dataset = TACO_Dataset(img_dir, ann_path, samples[4200:], transform=transforms['test'])
-    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:5], transform=transforms['train'])
-    val_dataset = TACO_Dataset(img_dir, ann_path, samples[5:8], transform=transforms['val'])
-    test_dataset = TACO_Dataset(img_dir, ann_path, samples[8:10], transform=transforms['test'])
+    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:120], transform=transforms['train'])
+    val_dataset = TACO_Dataset(img_dir, ann_path, samples[120:140], transform=transforms['val'])
+    test_dataset = TACO_Dataset(img_dir, ann_path, samples[140:150], transform=transforms['test'])
 
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
@@ -283,7 +283,6 @@ class Taco():
                     height=taco_alla_coco.imgs[i]["height"],
                     annotations=taco_alla_coco.loadAnns(taco_alla_coco.getAnnIds(
                         imgIds=[i], catIds=class_ids, iscrowd=None)))
-        print( self.image_info[1])
         return taco_alla_coco
 
 

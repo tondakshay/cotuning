@@ -125,16 +125,21 @@ def main():
             rel_val_logits, rel_val_labels
         )
     
-    print(relationship)
     train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     total_iters = 5
     train_len = len(train_loader) - 1
+    params_list = [{"params": filter(lambda p: p.requires_grad, net.feature_net.parameters())},
+                   {"params": filter(lambda p: p.requires_grad,
+                                     net.categ_net_1.parameters())},
+                   {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": 3}] #Setting learning rate 3 for now. SHould be taken from argument parser
+
+
     train_iter = iter(train_loader)
-    optimizer = torch.optim.SGD()
-    scheduler = torch.optim.lr_scheduler.MultiStepLR( optimizer, milestones)
-    for iter_num in range(total_iters):
+    optimizer = torch.optim.SGD(params_list, lr = 3)
+  #  scheduler = torch.optim.lr_scheduler.MultiStepLR( optimizer)
+    for iter_num in tqdm(range(total_iters)):
 #Turning the flag on to set the network into training mode
         net.train()
 #These are the actual labels against which the loss has to be minimized

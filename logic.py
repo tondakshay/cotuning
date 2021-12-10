@@ -33,7 +33,6 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
     train_probabilities = softmax(train_logits)
     validation_probabilities = softmax(validation_logits)
 
-    print(train_logits.shape)
     # We start with learning the neural network `g` to map source domain probabilities
     # (p(y_s | x), which are treated as a feature vector) to target domain labels y_t.
     # We perform hyperparameter tuning to find the best regularization strength for
@@ -55,6 +54,8 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
     # Now we calibrate the logits of `g` and convert to probabilities p(y_t | y_s)
     scale = calibrate(validation_logits, validation_labels)
     p_target_given_source = softmax(best_classifier.coef_.T * scale)
+    print("atharv is noob")
+    print(train_labels)
         # p_target_given_source.shape = [N_source_labels, N_target_labels]
 
     all_probabilities = np.concatenate((train_probabilities, validation_probabilities))
