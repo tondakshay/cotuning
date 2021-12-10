@@ -30,9 +30,11 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
     
     # Convert logits into probabilities
     # Here we are assuming that the deep model logits f_0(x) are already calibrated
+    print(train_logits)
     train_probabilities = softmax(train_logits)
     validation_probabilities = softmax(validation_logits)
 
+    print(train_probabilities)
     # We start with learning the neural network `g` to map source domain probabilities
     # (p(y_s | x), which are treated as a feature vector) to target domain labels y_t.
     # We perform hyperparameter tuning to find the best regularization strength for
@@ -40,14 +42,16 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
     best_classifier = None
     best_accuracy = 0
     for C in [1e4, 3e3, 1e3, 3e2, 1e2, 3e1, 1e1, 3.0, 1.0, 3e-1, 1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4]:
-        classifier = LogisticRegression(multi_class='multinomial', C=C, fit_intercept=False)
+        classifier = LogisticRegression(multi_class='multinomial', C=C, fit_intercept=False, max_iter=200)
         classifier.fit(train_probabilities, train_labels)
 
         val_predictions = classifier.predict(validation_probabilities)
-        val_accuracy = (val_predictions == validation_labels) / len(validation_labels)
+        val_accuracy = (val_predictions == validation_labels).sum() / len(validation_labels)
         if val_accuracy > best_accuracy:
             best_accuracy = val_accuracy
             best_classifier = classifier
+            print(best_classifier)
+    print(f"Best relationship accuracy = {best_accuracy}")
     del best_accuracy
 
     # Now we calibrate the logits of `g` and convert to probabilities p(y_t | y_s)
@@ -80,7 +84,9 @@ def calibrate(logits, labels):
     - t_best: [float] t for which cross_entropy loss for logits scaled down by t
         wrt to the labels is minimized
     """
-    t = nn.Paramter(torch.as_tensor([[1]]),requires_grad = True)
+    logits = torch.tensor(logits).detach()
+    labels = torch.tensor(labels).detach()
+    t = nn.Parameter(torch.ones(1,1, dtype=torch.float32),requires_grad = True)
     optim = torch.optim.LBFGS([t])
 
     def loss():

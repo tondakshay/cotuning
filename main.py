@@ -117,8 +117,8 @@ def main():
             all_labels = np.concatenate(labels_list, axis=0)
             return all_logits, all_labels
         
-        rel_train_logits, rel_train_labels = get_features(train_loader)
         rel_val_logits, rel_val_labels = get_features(val_loader)
+        rel_train_logits, rel_train_labels = get_features(train_loader)
 
         relationship = relationship_learning(
             rel_train_logits, rel_train_labels,

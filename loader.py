@@ -69,7 +69,7 @@ def validation_transforms(resize_size=256, crop_size=224):
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    start_center = (resize_size - crop_size - 1) / 2
+    start_center = (resize_size - crop_size - 1) // 2
 
     return transforms.Compose([
         # ResizeImage(resize_size),
@@ -83,7 +83,7 @@ def test_transforms(resize_size=256, crop_size=224):
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    start_center = (resize_size - crop_size - 1) / 2
+    start_center = (resize_size - crop_size - 1) // 2
 
     return transforms.Compose([
         # ResizeImage(resize_size),
@@ -118,13 +118,16 @@ def get_loaders(img_dir, ann_path):
 
     samples = np.random.permutation(4784)    # size of dataset
     # samples = range(4784)
-    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:4000], transform=transforms['train'])
-    val_dataset = TACO_Dataset(img_dir, ann_path, samples[4000:4200], transform=transforms['val'])
-    test_dataset = TACO_Dataset(img_dir, ann_path, samples[4200:], transform=transforms['test'])
+    # train_dataset = TACO_Dataset(img_dir, ann_path, samples[:4000], transform=transforms['train'])
+    # val_dataset = TACO_Dataset(img_dir, ann_path, samples[4000:4200], transform=transforms['val'])
+    # test_dataset = TACO_Dataset(img_dir, ann_path, samples[4200:], transform=transforms['test'])
+    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:5], transform=transforms['train'])
+    val_dataset = TACO_Dataset(img_dir, ann_path, samples[5:8], transform=transforms['val'])
+    test_dataset = TACO_Dataset(img_dir, ann_path, samples[8:10], transform=transforms['test'])
 
-    train_loader = DataLoader(train_dataset, batch_size=10, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=10, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=10, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=True)
 
     return train_loader, val_loader, test_loader
 
