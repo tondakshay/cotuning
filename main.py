@@ -27,7 +27,7 @@ def get_configs():
     # train
     parser.add_argument("--gpu", default=0, type=int,
             help="GPU num for training")
-    parser.add_argument("--seed", type=int, default=2021)
+    parser.add_argument("--seed", type=int, default=2018)
 
     # dataset
     parser.add_argument("--classes_num", default=60, type=int,
@@ -57,7 +57,8 @@ def set_seeds(seed):
 def main():
     configs = get_configs()
     print(configs)
-    # torch.cuda.set_device(configs.gpu)
+    if configs.gpu > 0:
+        torch.cuda.set_device(configs.gpu)
     set_seeds(configs.seed)
 
     # Get loaders for the data for training the final model,
@@ -86,7 +87,10 @@ def main():
 
             return out_1, out_2
     
-    net = Net()#.cuda()    # or just Net() ?
+    net = Net()
+    if configs.gpu > 0:
+        net = net.cuda()
+
     # Obtain the relationship p(y_s | y_t)
     if os.path.exists(configs.relationship_path):
         print(f"Loading relationship from path: {configs.relationship_path}")
@@ -107,7 +111,8 @@ def main():
             for inputs, label in tqdm(ldr):
                 labels_list.append(label)
 
-                # inputs, label = inputs.cuda(), label.cuda()
+                if configs.gpu > 0:
+                    inputs, label = inputs.cuda(), label.cuda()
                 source_logits, _ = net(inputs)
                 source_logits = source_logits.detach().cpu().numpy()
 
@@ -124,9 +129,9 @@ def main():
             rel_train_logits, rel_train_labels,
             rel_val_logits, rel_val_labels
         )
-        print("Relationship obtained:\n")
-        print(relationship)
-        print(relationship.shape)
+        print("Relationship obtained:")
+        print(relationship, "\n")
+        print("Relationship shape: ", relationship.shape, "\n")
 
     train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
@@ -138,8 +143,6 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
                                      net.categ_net_1.parameters())},
                    {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": 3}] #Setting learning rate 3 for now. SHould be taken from argument parser
 
-
-    print(relationship.shape)
     train_iter = iter(train_loader)
     optimizer = torch.optim.SGD(params_list, lr = 3)
     milestones = [6000]
@@ -148,12 +151,19 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     for iter_num in tqdm(range(total_iters)):
 #Turning the flag on to set the network into training mode
         net.train()
+        if iter_num % train_len == 0:
+            train_iter = iter(train_loader)
+
 #These are the actual labels against which the loss has to be minimized
         train_inputs, train_labels = next(train_iter)
-        imagenet_targets = torch.from_numpy(
-            relationship[train_labels]).float()#cuda().float()
 #pushing data to default GPUs
-        train_inputs, train_labels = train_inputs, train_labels#.cuda()
+        if configs.gpu > 0:
+            imagenet_targets = torch.from_numpy(
+                    relationship[train_labels]).cuda().float()
+            train_inputs, train_labels = train_inputs.cuda(), train_labels.cuda()
+        else:
+            imagenet_targets = torch.from_numpy(
+                relationship[train_labels]).float()
 
 #running the forward pass
         imagenet_outputs, train_outputs = net(train_inputs)
@@ -176,10 +186,10 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
 # take a step based on gradient and parameters
 # scheduler.step()
         scheduler.step()
-        print(
-            "Iter: {}/{} ".format(
-                iter_num, 9050)
-            )
+        # print(
+        #   "Iter: {}/{} ".format(
+        #       iter_num, 9050)
+        #   )
         checkpoint = {
                 'state_dict': net.state_dict(),
                 'iter': iter_num,
@@ -187,7 +197,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         default_chk="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/"
         torch.save(checkpoint,
                        os.path.join(default_chk, '{}.pkl'.format(iter_num)))
-        print("Model Saved.")
+        # print("Model Saved.")
 
 
 
