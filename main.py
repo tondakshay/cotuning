@@ -13,7 +13,7 @@ from logic import relationship_learning
 from backbone import ResNet50_F, ResNet50_C
 # from loader import main_loading_function 
 from loader import get_loaders
-from loader import Taco
+# from loader import Taco
 
 
 def get_configs():
@@ -93,7 +93,7 @@ def main():
         relationship = np.load(configs.relationship_path)
 
     else:
-        print("Computing the relationsip...")
+        print("Computing the relationship...")
 
         os.makedirs(os.path.dirname(configs.relationship_path), exist_ok=True)
         if os.path.basename(configs.relationship_path) == "":
@@ -125,7 +125,7 @@ def main():
             rel_val_logits, rel_val_labels
         )
     
-    train(configs, train_loader, val_loader, test_loaders, net, relationship)
+    # train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     total_iters = 5
@@ -168,7 +168,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         loss.backward()
         optimizer.step()
 # take a step based on gradient and parameters
-        scheduler.step()
+        # scheduler.step()
 
 
 
