@@ -124,6 +124,8 @@ def main():
             rel_train_logits, rel_train_labels,
             rel_val_logits, rel_val_labels
         )
+        print("Relationship obtained:\n")
+        print(relationship)
     
     # train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 

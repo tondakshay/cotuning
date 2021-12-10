@@ -116,7 +116,7 @@ def main():
 def get_loaders(img_dir, ann_path):
     transforms = get_transforms_for_torch(resize_size=256, crop_size=224)
 
-    samples = np.random.permutation(4784)    # size of dataset
+    samples = np.random.permutation(4113)    # size of dataset
     # samples = range(4784)
     # train_dataset = TACO_Dataset(img_dir, ann_path, samples[:4000], transform=transforms['train'])
     # val_dataset = TACO_Dataset(img_dir, ann_path, samples[4000:4200], transform=transforms['val'])
@@ -163,7 +163,7 @@ class TACO_Dataset(Dataset):
                 'Plastic container',
                 'Aluminium foil',   # select till here
                 'Plastic utensils',
-                'Ropes & strings',
+                'Rope & strings',
                 'Paper bag',
                 'Scrap metal',
                 'Food waste',
@@ -179,7 +179,7 @@ class TACO_Dataset(Dataset):
         sc_df = pd.DataFrame(annotations_json['categories'], columns=['supercategory', 'id']).rename(columns={"id":"id2"})
         sc_df['sc_id'] = sc_df['supercategory'].apply(supercategories.index)
         self.df = pd.merge(self.df, sc_df[['id2', 'sc_id']], how='left', left_on='category_id', right_on='id2')
-        self.df = self.df.drop(columns=['id', 'id2']).rename(columns={'sc_id':'id'})
+        self.df = self.df.drop(columns=['id', 'id2'])
 
         self.df = self.df[self.df['sc_id'] < 16].reset_index()    # drop data with fewer training examples
 
@@ -206,7 +206,7 @@ class TACO_Dataset(Dataset):
                 height = bbox[3],
         )
 
-        label = self.df.iloc[idx].loc['category_id']
+        label = self.df.iloc[idx].loc['sc_id']
 
         if self.transform:
             image = self.transform(image)

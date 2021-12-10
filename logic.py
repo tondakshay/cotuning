@@ -39,23 +39,25 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
     # the logistic model.
     best_classifier = None
     best_accuracy = -1
+    best_train_accuracy = -1
     for C in [1e4, 3e3, 1e3, 3e2, 1e2, 3e1, 1e1, 3.0, 1.0, 3e-1, 1e-1, 3e-2, 1e-2, 3e-3, 1e-3, 3e-4, 1e-4]:
-        classifier = LogisticRegression(multi_class='multinomial', C=C, fit_intercept=True, max_iter=200)
+        classifier = LogisticRegression(multi_class='multinomial', C=C, fit_intercept=True, max_iter=1000)
         classifier.fit(train_probabilities, train_labels)
 
         val_predictions = classifier.predict(validation_probabilities)
-        val_accuracy = (val_predictions == validation_labels).sum() / len(validation_labels)
+        val_accuracy = (val_predictions == validation_labels).mean()
+        train_accuracy = (classifier.predict(train_probabilities) == train_labels).mean()
         if (val_accuracy > best_accuracy):
             best_accuracy = val_accuracy
             best_classifier = classifier
+            best_train_accuracy = train_accuracy
     print(f"Best relationship accuracy = {best_accuracy}")
-    del best_accuracy
+    print(f"Best train accuracy = {best_train_accuracy}")
+    del best_accuracy, best_train_accuracy
 
     # Now we calibrate the logits of `g` and convert to probabilities p(y_t | y_s)
     scale = calibrate(validation_logits, validation_labels)
     p_target_given_source = softmax(best_classifier.coef_.T * scale)
-    print("atharv is noob")
-    print(train_labels)
         # p_target_given_source.shape = [N_source_labels, N_target_labels]
 
     all_probabilities = np.concatenate((train_probabilities, validation_probabilities))
