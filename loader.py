@@ -125,6 +125,7 @@ def get_loaders(img_dir, ann_path):
     val_dataset = TACO_Dataset(img_dir, ann_path, samples[120:140], transform=transforms['val'])
     test_dataset = TACO_Dataset(img_dir, ann_path, samples[140:150], transform=transforms['test'])
 
+    print(train_dataset.num_examples())
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=True)
@@ -213,6 +214,9 @@ class TACO_Dataset(Dataset):
         if self.label_transform:
             label = self.label_transform(label)
         return image, label
+    
+    def num_examples(self):
+        return self.df['sc_id'].value_counts()
 
 # def main_loading_function(dir_path):
 #     transforms  = get_transforms_for_torch(resize_size = 256, crop_size = 224)

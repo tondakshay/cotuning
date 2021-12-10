@@ -126,11 +126,12 @@ def main():
         )
         print("Relationship obtained:\n")
         print(relationship)
-    
-    # train(configs, train_loader, val_loader, test_loaders, net, relationship)
+        print(relationship.shape)
+
+    train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
-    total_iters = 5
+    total_iters = 9050
     train_len = len(train_loader) - 1
     params_list = [{"params": filter(lambda p: p.requires_grad, net.feature_net.parameters())},
                    {"params": filter(lambda p: p.requires_grad,
@@ -138,19 +139,21 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
                    {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": 3}] #Setting learning rate 3 for now. SHould be taken from argument parser
 
 
+    print(relationship.shape)
     train_iter = iter(train_loader)
     optimizer = torch.optim.SGD(params_list, lr = 3)
-  #  scheduler = torch.optim.lr_scheduler.MultiStepLR( optimizer)
+    milestones = [6000]
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer, milestones, gamma=0.1)
     for iter_num in tqdm(range(total_iters)):
 #Turning the flag on to set the network into training mode
         net.train()
 #These are the actual labels against which the loss has to be minimized
         train_inputs, train_labels = next(train_iter)
-#pushing data to default GPUs
         imagenet_targets = torch.from_numpy(
-            relationship[train_labels]).cuda().float()
-        train_inputs, train_labels = train_inputs.cuda(), train_labels.cuda()
-        imagenet_outputs, train_outputs = net(train_inputs)
+            relationship[train_labels]).float()#cuda().float()
+#pushing data to default GPUs
+        train_inputs, train_labels = train_inputs, train_labels#.cuda()
 
 #running the forward pass
         imagenet_outputs, train_outputs = net(train_inputs)
@@ -160,7 +163,8 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
 
 
         imagenet_loss = - imagenet_targets * nn.LogSoftmax(dim=-1)(imagenet_outputs)
-        loss = ce_loss + configs.trade_off * imagenet_loss
+        imagenet_loss = torch.mean(torch.sum(imagenet_loss, dim=-1))
+        loss = ce_loss + 2.3 * imagenet_loss
 
 #so the GPU doesn't cry on fast filling memory
         net.zero_grad()
@@ -170,58 +174,20 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         loss.backward()
         optimizer.step()
 # take a step based on gradient and parameters
-        # scheduler.step()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# scheduler.step()
+        scheduler.step()
+        print(
+            "Iter: {}/{} ".format(
+                iter_num, 9050)
+            )
+        checkpoint = {
+                'state_dict': net.state_dict(),
+                'iter': iter_num,
+            }
+        default_chk="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/"
+        torch.save(checkpoint,
+                       os.path.join(default_chk, '{}.pkl'.format(iter_num)))
+        print("Model Saved.")
 
 
 
