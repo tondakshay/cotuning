@@ -163,7 +163,7 @@ class TACO_Dataset(Dataset):
                 'Plastic container',
                 'Aluminium foil',   # select till here
                 'Plastic utensils',
-                'Ropes and strings',
+                'Ropes & strings',
                 'Paper bag',
                 'Scrap metal',
                 'Food waste',
