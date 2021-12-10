@@ -144,6 +144,26 @@ class TACO_Dataset(Dataset):
         df2['bbox'] = df2['bbox'].apply(lambda x:list([int(round(z)) for z in x]))
 
         self.df = pd.merge(df1, df2, how='left', left_on='id', right_on='image_id')
+        
+        supercategories = [
+                'Plastic bag & wrapper',
+                'Cigarette',
+                'Bottle',
+                'Bottle cap',
+                'Can',
+                'Other plastic',
+                'Carton',
+                'Cup',
+                'Straw',
+                'Paper',
+                'Broken glass',
+                'Styrofoam piece',
+                'Pop tab',
+                'Lid',
+                'Plastic container',
+                'Aluminium foil',
+         ]
+
         if samples is not None:
             self.df = self.df.iloc[samples].reset_index()
 
