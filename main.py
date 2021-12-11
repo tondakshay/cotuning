@@ -22,12 +22,13 @@ def restore_checkpoint(model, save_dir):
         print("No saved files found")
         return model
     try:
-        filename = os.path.join(save_dir,'{}.pkl'.format(start_iter-1))
+        filename = os.path.join(save_dir,f'{start_iter-1}.pkl')
+        print("Loading file", filename)
         checkpoint = torch.load(filename)
         model.load_state_dict(checkpoint['state_dict'], strict = False)
-        print("loaded from checkpoint successfully from {}".format(filename))
+        print("Loaded from checkpoint successfully from {}".format(filename))
     except:
-        print("Nothing loaded")
+        print("No model found")
     return model, start_iter 
 
 def get_configs():
@@ -45,7 +46,7 @@ def get_configs():
 
     parser.add_argument("--seed", default=2018, type=int)
     parser.add_argument("--batch_size", default=50, type=int)
-    parser.add_argument('--total_iter', default=9050, type=int)
+    parser.add_argument('--total_iters', default=9050, type=int)
     parser.add_argument('--lr', default=1e-3, type=float,
                         help='Learning rate for training')
     parser.add_argument('--gamma', default=0.1, type=float,
@@ -69,7 +70,7 @@ def get_configs():
     parser.add_argument("-logitdir", "--logits-dir",
             default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/logits/",
             help="Path of logits storage")
-    parser.add_argument('-fr', "--force-recompute", nargs='+',
+    parser.add_argument('-fr', "--force-recompute", nargs='+', default=[],
             help="Forcibly recompute these aspects")
 
     configs = parser.parse_args()
