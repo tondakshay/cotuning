@@ -23,10 +23,10 @@ def restore_checkpoint(model, save_dir, curr_itr):
     try:
         filename = os.path.join(save_dir,'{}.pkl'.format(curr_itr))
         checkpoint = torch.load(filename)
-        model.load_state_dict(checkpoint['state_dict'])
+        model.load_state_dict(checkpoint['state_dict'], strict = False)
+        print("loaded from checkpoint successfully from {}".format(filename))
     except:
-        print("model was not saved. Making new")
-    print("loaded from checkpoint successfully")
+        pass
     return model
 
 def get_configs():
@@ -59,7 +59,7 @@ def get_configs():
             default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/relationship.npy",
             type=str,
             help="Path of pre-computed relationship")
-    parser.add_argument('--save_dir', default="./",
+    parser.add_argument('--save_dir', default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/models",
                         type=str, help='Path of saved models')
 
     configs = parser.parse_args()
