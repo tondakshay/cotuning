@@ -42,7 +42,7 @@ def test():
         _, target_logits = model(image)
         target_logits = target_logits.detach().cpu().numpy()
 
-       logits_list.append(target_logits)
+        logits_list.append(target_logits)
    all_logits = np.concatenate(logits_list, axis=0)
    labels = np.concatenate(labels_list, axis=0)
 
