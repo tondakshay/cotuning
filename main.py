@@ -60,12 +60,17 @@ def get_configs():
             help="Number of target domain classes")
 
     # experiment
-    parser.add_argument("--relationship_dir",
+    parser.add_argument("-reldir", "--relationship_dir",
             default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/",
             type=str,
             help="Path of pre-computed relationship")
-    parser.add_argument('--save_dir', default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/models",
+    parser.add_argument('--save-dir', default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/models",
                         type=str, help='Path of saved models')
+    parser.add_argument("-logitdir", "--logits-dir",
+            default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/logits/",
+            help="Path of logits storage")
+    parser.add_argument('-fr', "--force-recompute", nargs='+',
+            help="Forcibly recompute these aspects")
 
     configs = parser.parse_args()
     return configs
@@ -118,13 +123,13 @@ def main():
             return out_1, out_2
     
     net = Net()
-    if configs.gpu > 0:
+    if configs.gpu > 0:)
         net = net.cuda()
 
     # Obtain the relationship p(y_s | y_t)
     rel_path = os.path.join(configs.relationship_dir, f'rel_{configs.seed}.npy')
-    if os.path.exists(rel_path):
-        print(f"Loading relationship from path: {configs.relationship_path}")
+    if os.path.exists(rel_path) and ('rel' not in configs.force_recompute):
+        print(f"Loading relationship from path: {configs.relationship_dir}")
         relationship = np.load(rel_path)
 
     else:
@@ -133,7 +138,6 @@ def main():
         os.makedirs(configs.relationship_dir, exist_ok=True)
         # if os.path.basename(configs.relationship_path) == "":
             # configs.relationship_path = os.path.join(configs.relationship_path, "relationship.npy")
-        
         def get_features(ldr):
             labels_list = []
             logits_list = []
@@ -153,8 +157,31 @@ def main():
             all_labels = np.concatenate(labels_list, axis=0)
             return all_logits, all_labels
         
-        rel_val_logits, rel_val_labels = get_features(val_loader)
-        rel_train_logits, rel_train_labels = get_features(rel_train_loader)
+        relt_logits_path = os.path.join(configs.logits_dir, f'relt_logits_{configs.limit_size}.npy')
+        relt_labels_path = os.path.join(configs.logits_dir, f'relt_labels_{configs.limit_size}.npy')
+        relv_logits_path = os.path.join(configs.logits_dir, f'relv_logits_{configs.limit_size}.npy')
+        relv_labels_path = os.path.join(configs.logits_dir, f'relv_labels_{configs.limit_size}.npy')
+
+        if ('logits' not in configs.force_recompute):
+            try:
+                rel_val_logits, rel_val_labels = np.load(relv_logits_path), np.load(relv_labels_path)
+                rel_train_logits, rel_train_labels = np.load(relt_logits_path), np.load(relt_labels_path)
+            except FileNotFoundError:
+                print("Logits not found. Computing logits for relationship training...")
+                rel_val_logits, rel_val_labels = get_features(val_loader)
+                rel_train_logits, rel_train_labels = get_features(rel_train_loader)
+                np.save(relt_logits_path, rel_train_logits)
+                np.save(relt_labels_path, rel_train_labels)
+                np.save(relv_logits_path, rel_val_logits)
+                np.save(relv_labels_path, rel_val_labels)
+        else:
+            print("Computing logits for relationship training...")
+            rel_val_logits, rel_val_labels = get_features(val_loader)
+            rel_train_logits, rel_train_labels = get_features(rel_train_loader)
+            np.save(relt_logits_path, rel_train_logits)
+            np.save(relt_labels_path, rel_train_labels)
+            np.save(relv_logits_path, rel_val_logits)
+            np.save(relv_labels_path, rel_val_labels)
 
         relationship = relationship_learning(
             rel_train_logits, rel_train_labels,
