@@ -51,6 +51,9 @@ class ResizeImage():
 class ToFloatTensor():
     def __call__(self, tensor):
         return tensor.type(FloatTensor)
+class Div255():
+    def __call__(self, tensor):
+        return tensor / 255.0
 
 def training_transforms(resize_size=256, crop_size=224):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -62,7 +65,8 @@ def training_transforms(resize_size=256, crop_size=224):
         # transforms.RandomHorizontalFlip(),
         # transforms.ToTensor(),
         ToFloatTensor(),
-        normalize
+        Div255(),
+        # normalize
     ])
 
 def validation_transforms(resize_size=256, crop_size=224):
@@ -77,7 +81,8 @@ def validation_transforms(resize_size=256, crop_size=224):
         # PlaceCrop(crop_size, start_center, start_center),
         # transforms.ToTensor(),
         ToFloatTensor(),
-        normalize
+        Div255(),
+        # normalize
     ])
 def test_transforms(resize_size=256, crop_size=224):
 
@@ -91,7 +96,8 @@ def test_transforms(resize_size=256, crop_size=224):
         # PlaceCrop(crop_size, start_center, start_center),
         # transforms.ToTensor(),
         ToFloatTensor(),
-        normalize
+        Div255(),
+        # normalize
     ])
 
 
