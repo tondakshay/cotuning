@@ -113,7 +113,7 @@ def main():
     # dataset_train.load_taco(dir_path+"/../TACO/data")
 
 
-def get_loaders(img_dir, ann_path, split=(3800,200,113), random_sampling=True, batch_size=32):
+def get_loaders(img_dir, ann_path, split=(3800,200,113), random_sampling=True, batch_size=32, limit_size=None):
     # samples = range(4784)
     train_dataset, val_dataset, test_dataset = get_datasets(img_dir, ann_path, split, random_sampling)
 
@@ -124,24 +124,26 @@ def get_loaders(img_dir, ann_path, split=(3800,200,113), random_sampling=True, b
 
     return train_loader, relationship_train_loader, val_loader, test_loader
 
-def get_datasets(img_dir, ann_path, split=(3800,200,113), random_sampling=True):
+def get_datasets(img_dir, ann_path, split=(3800,200,113), random_sampling=True, limit_size=None):
     transforms = get_transforms_for_torch(resize_size=256, crop_size=224)
     dataset_size = len(TACO_Dataset(img_dir, ann_path))
-
     if random_sampling:
         samples = np.random.permutation(dataset_size)    # size of dataset
     else:
         samples = np.arange(dataset_size)
 
+    if limit_size:
+        dataset_size = limit_size if (limit_size < dataset_size)
+
     train_size = split[0] * dataset_size // sum(split)
     val_size = split[1] * dataset_size // sum(split)
     
-    # train_dataset = TACO_Dataset(img_dir, ann_path, samples[:train_size], transform=transforms['train'])
-    # val_dataset = TACO_Dataset(img_dir, ann_path, samples[train_size:train_size+val_size], transform=transforms['val'])
-    # test_dataset = TACO_Dataset(img_dir, ann_path, samples[train_size+val_size:], transform=transforms['test'])
-    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:120], transform=transforms['train'])
-    val_dataset = TACO_Dataset(img_dir, ann_path, samples[120:140], transform=transforms['val'])
-    test_dataset = TACO_Dataset(img_dir, ann_path, samples[140:150], transform=transforms['test'])
+    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:train_size], transform=transforms['train'])
+    val_dataset = TACO_Dataset(img_dir, ann_path, samples[train_size:train_size+val_size], transform=transforms['val'])
+    test_dataset = TACO_Dataset(img_dir, ann_path, samples[train_size+val_size:], transform=transforms['test'])
+    # train_dataset = TACO_Dataset(img_dir, ann_path, samples[:120], transform=transforms['train'])
+    # val_dataset = TACO_Dataset(img_dir, ann_path, samples[120:140], transform=transforms['val'])
+    # test_dataset = TACO_Dataset(img_dir, ann_path, samples[140:150], transform=transforms['test'])
 
     return train_dataset, val_dataset, test_dataset
 

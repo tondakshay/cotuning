@@ -42,7 +42,7 @@ def get_configs():
             help="GPU num for training")
     
 
-    parser.add_argument("--seed", default=2021, type=int)
+    parser.add_argument("--seed", default=2018, type=int)
     parser.add_argument("--batch_size", default=50, type=int)
     parser.add_argument('--total_iter', default=9050, type=int)
     parser.add_argument('--lr', default=1e-3, type=float,
@@ -51,12 +51,16 @@ def get_configs():
                         help='Gamma value for learning rate decay')
 
     # dataset
+    parser.add_argument("--split", nargs='+', type=int, default=[3800, 200, 113],
+            help="Split proportion of train, val, test")
+    parser.add_argument("-lsize", "--limit-size", type=int, default=4113,
+            help="Select limited portion of the dataset for train, val, test")
     parser.add_argument("--classes_num", default=60, type=int,
             help="Number of target domain classes")
 
     # experiment
-    parser.add_argument("--relationship_path",
-            default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/relationship.npy",
+    parser.add_argument("--relationship_dir",
+            default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/",
             type=str,
             help="Path of pre-computed relationship")
     parser.add_argument('--save_dir', default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/models",
@@ -88,7 +92,9 @@ def main():
     # relationship learning training, validation data, and test data
 
     dir_path = "/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/TACO/data/"
-    train_loader, rel_train_loader, val_loader, test_loaders = get_loaders(dir_path, os.path.join(dir_path, 'annotations.json'))
+    train_loader, rel_train_loader, val_loader, test_loaders = get_loaders(
+            dir_path, os.path.join(dir_path, 'annotations.json'),
+            split=configs.split, limit_size=configs.limit_size)
 
     # Define the Neural network class and object which simultaneously predicts source
     # and target domain logits
@@ -115,16 +121,17 @@ def main():
         net = net.cuda()
 
     # Obtain the relationship p(y_s | y_t)
-    if os.path.exists(configs.relationship_path):
+    rel_path = os.path.join(configs.relationship_dir, f'rel_{configs.seed}.npy')
+    if os.path.exists(rel_path):
         print(f"Loading relationship from path: {configs.relationship_path}")
-        relationship = np.load(configs.relationship_path)
+        relationship = np.load(rel_path)
 
     else:
         print("Computing the relationship...")
 
-        os.makedirs(os.path.dirname(configs.relationship_path), exist_ok=True)
-        if os.path.basename(configs.relationship_path) == "":
-            configs.relationship_path = os.path.join(configs.relationship_path, "relationship.npy")
+        os.makedirs(configs.relationship_dir, exist_ok=True)
+        # if os.path.basename(configs.relationship_path) == "":
+            # configs.relationship_path = os.path.join(configs.relationship_path, "relationship.npy")
         
         def get_features(ldr):
             labels_list = []
@@ -155,6 +162,7 @@ def main():
         print("Relationship obtained:")
         print(relationship, "\n")
         print("Relationship shape: ", relationship.shape, "\n")
+        np.save(rel_path)
 
     train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
