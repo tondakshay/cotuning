@@ -15,6 +15,20 @@ from backbone import ResNet50_F, ResNet50_C
 from loader import get_loaders
 # from loader import Taco
 
+def restore_checkpoint(model, save_dir, curr_itr):
+    checkpoint = torch.load(filename)
+    files = [files for files in os.listdir(save_dir) if files.endswith('.pkl')]
+    if not files:
+        print("No saved files found")
+        return model
+    try:
+        filename = os.path.join(save_dir,'{}.pkl'.format(curr_itr))
+        checkpoint = torch.load(filename)
+        model.load_state_dict(checkpoint['state_dict'])
+    except:
+        print("model was not saved. Making new")
+    print("loaded from checkpoint successfully")
+    return model
 
 def get_configs():
     """
@@ -46,6 +60,8 @@ def get_configs():
             default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/relationship.npy",
             type=str,
             help="Path of pre-computed relationship")
+    parser.add_argument('--save_dir', default="./",
+                        type=str, help='Path of saved models')
 
     configs = parser.parse_args()
     return configs
@@ -98,6 +114,7 @@ def main():
     net = Net()
     if configs.gpu > 0:
         net = net.cuda()
+        net = restore_checkpoint(net,configs.save_dir)
 
     # Obtain the relationship p(y_s | y_t)
     if os.path.exists(configs.relationship_path):
@@ -144,6 +161,8 @@ def main():
     train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
+
+
     total_iters = 9050
     train_len = len(train_loader) - 1
     params_list = [{"params": filter(lambda p: p.requires_grad, net.feature_net.parameters())},
@@ -157,6 +176,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones, gamma=0.1)
     for iter_num in tqdm(range(total_iters)):
+        net = restore_checkpoint(net, config.save_dir, iter_num)
 #Turning the flag on to set the network into training mode
         net.train()
         if iter_num % train_len == 0:
