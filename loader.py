@@ -113,24 +113,35 @@ def main():
     # dataset_train.load_taco(dir_path+"/../TACO/data")
 
 
-def get_loaders(img_dir, ann_path):
-    transforms = get_transforms_for_torch(resize_size=256, crop_size=224)
-
-    samples = np.random.permutation(4113)    # size of dataset
+def get_loaders(img_dir, ann_path, split=(3800,200,113), random_sampling=True, batch_size=32):
     # samples = range(4784)
-    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:3800], transform=transforms['train'])
-    val_dataset = TACO_Dataset(img_dir, ann_path, samples[3800:4000], transform=transforms['val'])
-    test_dataset = TACO_Dataset(img_dir, ann_path, samples[4000:], transform=transforms['test'])
+    train_dataset, val_dataset, train_dataset = get_datsets(img_dir, ann_path, split, random_sampling)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    relationship_train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+
+    return train_loader, relationship_train_loader, val_loader, test_loader
+
+def get_datasets(img_dir, ann_path, split=(3800,200,113), random_sampling=True):
+    transforms = get_transforms_for_torch(resize_size=256, crop_size=224)
+    dataset_size = len(TACO_Dataset(img_dir, ann_path))
+
+    if random_sampling:
+        samples = np.random.permutation(dataset_size)    # size of dataset
+    else:
+        samples = np.arange(dataset_size)
+
+    train_size = split[0] * dataset_size // sum(split)
+    val_size = split[1] * dataset_size // sum(split)
+    
+    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:train_size], transform=transforms['train'])
+    val_dataset = TACO_Dataset(img_dir, ann_path, samples[train_size:train_size+val_size], transform=transforms['val'])
+    test_dataset = TACO_Dataset(img_dir, ann_path, samples[train_size+val_size:], transform=transforms['test'])
     # train_dataset = TACO_Dataset(img_dir, ann_path, samples[:120], transform=transforms['train'])
     # val_dataset = TACO_Dataset(img_dir, ann_path, samples[120:140], transform=transforms['val'])
     # test_dataset = TACO_Dataset(img_dir, ann_path, samples[140:150], transform=transforms['test'])
-
-    # print(train_dataset.num_examples())
-    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=8, shuffle=True)
-
-    return train_loader, val_loader, test_loader
 
 class TACO_Dataset(Dataset):
     def __init__(self, img_dir, annotations_file_path, samples=None, transform=None, label_transform=None):
@@ -142,7 +153,6 @@ class TACO_Dataset(Dataset):
         annotations_dict_list = annotations_json['annotations']
         df1 = pd.DataFrame(image_dict_list, columns=['id', 'width','height', 'file_name'])
         df2 = pd.DataFrame(annotations_dict_list, columns=['image_id', 'category_id', 'bbox'])
-        df2['bbox'] = df2['bbox'].apply(lambda x:list([int(round(z)) for z in x]))
 
         self.df = pd.merge(df1, df2, how='left', left_on='id', right_on='image_id')
         
@@ -187,7 +197,13 @@ class TACO_Dataset(Dataset):
         if samples is not None:
             self.df = self.df.iloc[samples].reset_index()
 
-        # print(f"Dataset size = {len(self.df)}")
+        self.df['bbox'] = self.df['bbox'].apply(lambda x:list([int(round(z)) for z in x]))
+        self.df['file_path'] = self.df['file_name'].apply(lambda file_name: os.path.join(img_dir, file_name))
+
+        self.file_paths = self.df['file_path'].to_numpy()
+        self.bboxes = np.array(self.df['bbox'].tolist())
+        self.labels = self.df['sc_id'].to_numpy()
+
         self.transform = transform
         self.label_transform = label_transform
 
@@ -196,9 +212,12 @@ class TACO_Dataset(Dataset):
 
     def __getitem__(self, idx):
         # print(f"Getting item number {idx}...")
-        img_path = os.path.join(self.img_dir, self.df.iloc[idx].loc['file_name'])
+        # img_path = os.path.join(self.img_dir, self.df.iloc[idx].loc['file_name'])
+        img_path = self.file_paths[idx]
         image = read_image(img_path)
-        bbox = self.df.loc[idx, 'bbox']
+
+        # bbox = self.df.loc[idx, 'bbox']
+        bbox = self.bboxes[idx, :]
         image = torchvision.transforms.functional.crop(
                 image,
                 left   = bbox[0],
@@ -207,7 +226,8 @@ class TACO_Dataset(Dataset):
                 height = bbox[3],
         )
 
-        label = self.df.iloc[idx].loc['sc_id']
+        # label = self.df.iloc[idx].loc['sc_id']
+        label = self.labels[idx]
 
         if self.transform:
             image = self.transform(image)
