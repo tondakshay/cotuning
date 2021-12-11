@@ -24,10 +24,18 @@ def get_configs():
         description="Co-tuning training implementation for EECS 545"
     )
 
-    # train
+    # in
     parser.add_argument("--gpu", default=0, type=int,
             help="GPU num for training")
-    parser.add_argument("--seed", type=int, default=2018)
+    
+
+    parser.add_argument("--seed", default=2021, type=int)
+    parser.add_argument("--batch_size", default=50, type=int)
+    parser.add_argument('--total_iter', default=9050, type=int)
+    parser.add_argument('--lr', default=1e-3, type=float,
+                        help='Learning rate for training')
+    parser.add_argument('--gamma', default=0.1, type=float,
+                        help='Gamma value for learning rate decay')
 
     # dataset
     parser.add_argument("--classes_num", default=60, type=int,
