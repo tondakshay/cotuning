@@ -133,7 +133,8 @@ def get_datasets(img_dir, ann_path, split=(3800,200,113), random_sampling=True, 
         samples = np.arange(dataset_size)
 
     if limit_size:
-        dataset_size = limit_size if (limit_size < dataset_size)
+        if (limit_size < dataset_size):
+            dataset_size = limit_size 
 
     train_size = split[0] * dataset_size // sum(split)
     val_size = split[1] * dataset_size // sum(split)

@@ -15,19 +15,20 @@ from backbone import ResNet50_F, ResNet50_C
 from loader import get_loaders
 # from loader import Taco
 
-def restore_checkpoint(model, save_dir, curr_itr):
+def restore_checkpoint(model, save_dir):
     files = [files for files in os.listdir(save_dir) if files.endswith('.pkl')]
+    start_iter = len(files)
     if not files:
         print("No saved files found")
         return model
     try:
-        filename = os.path.join(save_dir,'{}.pkl'.format(curr_itr))
+        filename = os.path.join(save_dir,'{}.pkl'.format(start_iter-1))
         checkpoint = torch.load(filename)
         model.load_state_dict(checkpoint['state_dict'], strict = False)
         print("loaded from checkpoint successfully from {}".format(filename))
     except:
-        pass
-    return model
+        print("Nothing loaded")
+    return model, start_iter 
 
 def get_configs():
     """
@@ -181,8 +182,8 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     milestones = [6000]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones, gamma=0.1)
-    for iter_num in tqdm(range(total_iters)):
-        net = restore_checkpoint(net, configs.save_dir, iter_num)
+    net,start_iter = restore_checkpoint(net, configs.save_dir)
+    for iter_num in tqdm(range(start_iter, total_iters)):
 #Turning the flag on to set the network into training mode
         net.train()
         if iter_num % train_len == 0:
