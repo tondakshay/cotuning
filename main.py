@@ -197,7 +197,6 @@ def main():
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
 
 
-    total_iters = 9050
     train_len = len(train_loader) - 1
     params_list = [{"params": filter(lambda p: p.requires_grad, net.feature_net.parameters())},
                    {"params": filter(lambda p: p.requires_grad,
@@ -210,7 +209,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones, gamma=0.1)
     net,start_iter = restore_checkpoint(net, configs.save_dir)
-    for iter_num in tqdm(range(start_iter, total_iters)):
+    for iter_num in tqdm(range(start_iter, configs.total_iters)):
 #Turning the flag on to set the network into training mode
         net.train()
         if iter_num % train_len == 0:
