@@ -123,7 +123,7 @@ def main():
             return out_1, out_2
     
     net = Net()
-    if configs.gpu > 0:)
+    if configs.gpu > 0:
         net = net.cuda()
 
     # Obtain the relationship p(y_s | y_t)
