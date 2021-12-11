@@ -118,7 +118,7 @@ def get_loaders(img_dir, ann_path, split=(3800,200,113), random_sampling=True, b
     train_dataset, val_dataset, test_dataset = get_datasets(img_dir, ann_path, split, random_sampling)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    relationship_train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False)
+    relationship_train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
