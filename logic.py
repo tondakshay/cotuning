@@ -98,6 +98,6 @@ def calibrate(logits, labels):
 
     for i in range(20):
         optim.step(loss)
-        print("Calibrating: ", t.item())
+        # print("Calibrating: ", t.item())
     
     return t.item()

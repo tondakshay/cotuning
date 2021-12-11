@@ -163,7 +163,7 @@ def main():
         print("Relationship obtained:")
         print(relationship, "\n")
         print("Relationship shape: ", relationship.shape, "\n")
-        np.save(rel_path)
+        np.save(rel_path, relationship)
 
     train(configs, train_loader, val_loader, test_loaders, net, relationship)
                 
