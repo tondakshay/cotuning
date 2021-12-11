@@ -24,10 +24,13 @@ def restore_checkpoint(model, save_dir):
     try:
         filename = os.path.join(save_dir,f'{start_iter-1}.pkl')
         print("Loading file", filename)
-        checkpoint = torch.load(filename)
+        if torch.cuda.is_available():
+            checkpoint = torch.load(filename)
+        else:
+            checkpoint = torch.load(filename, map_location=torch.device('cpu'))
         model.load_state_dict(checkpoint['state_dict'], strict = False)
         print("Loaded from checkpoint successfully from {}".format(filename))
-    except:
+    except FileNotFoundError:
         print("No model found")
     return model, start_iter 
 
@@ -57,7 +60,7 @@ def get_configs():
             help="Split proportion of train, val, test")
     parser.add_argument("-lsize", "--limit-size", type=int, default=4113,
             help="Select limited portion of the dataset for train, val, test")
-    parser.add_argument("--classes_num", default=60, type=int,
+    parser.add_argument("--classes_num", default=16, type=int,
             help="Number of target domain classes")
 
     # experiment

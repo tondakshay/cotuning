@@ -3,31 +3,57 @@ import argparse
 
 import numpy as np
 import torch, torchvision
+from torch import nn
 from tqdm import tqdm
 
 from backbone import ResNet50_F, ResNet50_C
-from loader import get_loader
+from loader import get_loaders
 from main import restore_checkpoint
 from logic import softmax
 
 def get_configs():
-    parser = arparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
             description="Co-tuning testing"
             )
     parser.add_argument('--load_dir', default="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/models",
             type=str, help='Directory where models are saved')
     parser.add_argument("--gpu", default=0, type=int,
             help="GPU num for testing")
+    parser.add_argument("--classes_num", default=16, type=int,
+            help="Number of target domain classes")
     configs = parser.parse_args()
     return configs
 
 def test():
+    configs = get_configs()
+
     dir_path = "/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/TACO/data/"
     _, _, _, test_loader = get_loaders(
             dir_path, os.path.join(dir_path, 'annotations.json'),
-            split=configs.split, limit_size=configs.limit_size)
+            )
 
-    model, _ = restore_checkpoint(None, configs.load_dir)
+    class Net(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.feature_net = ResNet50_F(pretrained=True)
+            self.categ_net_1 = ResNet50_C(pretrained=True)
+                # outputs source domain logits
+            self.categ_net_2 = nn.Linear(self.feature_net.output_dim, configs.classes_num)
+                # outputs target domain logits
+            torch.nn.init.normal_(self.categ_net_2.weight, 0, 0.01)
+            torch.nn.init.constant_(self.categ_net_2.bias, 0.0)
+
+        def forward(self, x):
+            features = self.feature_net(x)
+            out_1 = self.categ_net_1(features)
+            out_2 = self.categ_net_2(features)
+
+            return out_1, out_2
+
+    net = Net()
+    if configs.gpu > 0:
+        net = net.cuda()
+    model, _ = restore_checkpoint(net, configs.load_dir)
 
     test_iter = iter(test_loader)
     logits_list = []
