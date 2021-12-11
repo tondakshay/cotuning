@@ -16,7 +16,6 @@ from loader import get_loaders
 # from loader import Taco
 
 def restore_checkpoint(model, save_dir, curr_itr):
-    checkpoint = torch.load(filename)
     files = [files for files in os.listdir(save_dir) if files.endswith('.pkl')]
     if not files:
         print("No saved files found")
@@ -89,7 +88,7 @@ def main():
     # relationship learning training, validation data, and test data
 
     dir_path = "/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/TACO/data/"
-    train_loader, val_loader, test_loaders = get_loaders(dir_path, os.path.join(dir_path, 'annotations.json'))
+    train_loader, rel_train_loader, val_loader, test_loaders = get_loaders(dir_path, os.path.join(dir_path, 'annotations.json'))
 
     # Define the Neural network class and object which simultaneously predicts source
     # and target domain logits
@@ -114,7 +113,6 @@ def main():
     net = Net()
     if configs.gpu > 0:
         net = net.cuda()
-        net = restore_checkpoint(net,configs.save_dir)
 
     # Obtain the relationship p(y_s | y_t)
     if os.path.exists(configs.relationship_path):
@@ -148,7 +146,7 @@ def main():
             return all_logits, all_labels
         
         rel_val_logits, rel_val_labels = get_features(val_loader)
-        rel_train_logits, rel_train_labels = get_features(train_loader)
+        rel_train_logits, rel_train_labels = get_features(rel_train_loader)
 
         relationship = relationship_learning(
             rel_train_logits, rel_train_labels,
@@ -176,7 +174,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones, gamma=0.1)
     for iter_num in tqdm(range(total_iters)):
-        net = restore_checkpoint(net, config.save_dir, iter_num)
+        net = restore_checkpoint(net, configs.save_dir, iter_num)
 #Turning the flag on to set the network into training mode
         net.train()
         if iter_num % train_len == 0:
