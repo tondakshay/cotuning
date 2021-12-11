@@ -30,8 +30,8 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
     
     # Convert logits into probabilities
     # Here we are assuming that the deep model logits f_0(x) are already calibrated
-    train_probabilities = softmax(train_logits)
-    validation_probabilities = softmax(validation_logits)
+    train_probabilities = softmax(train_logits * 0.8840456604957581)
+    validation_probabilities = softmax(validation_logits * 0.8840456604957581)
 
     # We start with learning the neural network `g` to map source domain probabilities
     # (p(y_s | x), which are treated as a feature vector) to target domain labels y_t.
@@ -56,7 +56,8 @@ def relationship_learning(train_logits, train_labels, validation_logits, validat
     del best_accuracy, best_train_accuracy
 
     # Now we calibrate the logits of `g` and convert to probabilities p(y_t | y_s)
-    scale = calibrate(validation_logits, validation_labels)
+    # scale = calibrate(validation_logits, validation_labels)
+    scale = 1
     p_target_given_source = softmax(best_classifier.coef_.T * scale)
         # p_target_given_source.shape = [N_source_labels, N_target_labels]
 

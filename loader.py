@@ -58,8 +58,8 @@ def training_transforms(resize_size=256, crop_size=224):
     return transforms.Compose([
         # ResizeImage(resize_size),
         transforms.Resize((resize_size, resize_size)),
-        transforms.RandomResizedCrop(crop_size),
-        transforms.RandomHorizontalFlip(),
+        # transforms.RandomResizedCrop(crop_size),
+        # transforms.RandomHorizontalFlip(),
         # transforms.ToTensor(),
         ToFloatTensor(),
         normalize
@@ -74,7 +74,7 @@ def validation_transforms(resize_size=256, crop_size=224):
     return transforms.Compose([
         # ResizeImage(resize_size),
         transforms.Resize((resize_size, resize_size)),
-        PlaceCrop(crop_size, start_center, start_center),
+        # PlaceCrop(crop_size, start_center, start_center),
         # transforms.ToTensor(),
         ToFloatTensor(),
         normalize
@@ -88,7 +88,7 @@ def test_transforms(resize_size=256, crop_size=224):
     return transforms.Compose([
         # ResizeImage(resize_size),
         transforms.Resize((resize_size, resize_size)),
-        PlaceCrop(crop_size, start_center, start_center),
+        # PlaceCrop(crop_size, start_center, start_center),
         # transforms.ToTensor(),
         ToFloatTensor(),
         normalize

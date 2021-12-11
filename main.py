@@ -20,7 +20,7 @@ def restore_checkpoint(model, save_dir):
     start_iter = len(files)
     if not files:
         print("No saved files found")
-        return model
+        return model, 0
     try:
         filename = os.path.join(save_dir,f'{start_iter-1}.pkl')
         print("Loading file", filename)
@@ -134,7 +134,7 @@ def main():
         relationship = np.load(rel_path)
 
     else:
-        print("Computing the relationship...")
+        print("Need to compute the relationship...")
 
         os.makedirs(configs.relationship_dir, exist_ok=True)
         # if os.path.basename(configs.relationship_path) == "":
@@ -162,6 +162,7 @@ def main():
         relt_labels_path = os.path.join(configs.logits_dir, f'relt_labels_{configs.limit_size}.npy')
         relv_logits_path = os.path.join(configs.logits_dir, f'relv_logits_{configs.limit_size}.npy')
         relv_labels_path = os.path.join(configs.logits_dir, f'relv_labels_{configs.limit_size}.npy')
+        os.makedirs(configs.logits_dir, exist_ok=True)
 
         if ('logits' not in configs.force_recompute):
             try:
@@ -184,6 +185,7 @@ def main():
             np.save(relv_logits_path, rel_val_logits)
             np.save(relv_labels_path, rel_val_labels)
 
+        print("Now computing relationship...")
         relationship = relationship_learning(
             rel_train_logits, rel_train_labels,
             rel_val_logits, rel_val_labels
