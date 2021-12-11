@@ -49,7 +49,7 @@ def test():
     probabilities = softmax(all_logits)
 
     test_accuracy = (probabilities.argmax(axis=1) == labels).mean()
-return test_accuracy
+    return test_accuracy
 
 def main():
     test_accuracy = test()
