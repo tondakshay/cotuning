@@ -21,6 +21,7 @@ def get_configs():
             help="GPU num for testing")
     parser.add_argument("--classes_num", default=16, type=int,
             help="Number of target domain classes")
+    parser.add_argument("--batch_size", default=32, type=int)
     configs = parser.parse_args()
     return configs
 
@@ -30,6 +31,7 @@ def test():
     dir_path = "/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/TACO/data/"
     _, _, _, test_loader = get_loaders(
             dir_path, os.path.join(dir_path, 'annotations.json'),
+            batch_size=configs.batch_size
             )
 
     class Net(nn.Module):
@@ -55,7 +57,6 @@ def test():
         net = net.cuda()
     model, _ = restore_checkpoint(net, configs.load_dir)
 
-    test_iter = iter(test_loader)
     logits_list = []
     labels_list = []
 
@@ -68,7 +69,9 @@ def test():
         _, target_logits = model(image)
         target_logits = target_logits.detach().cpu().numpy()
 
+        print(target_logits.shape)
         logits_list.append(target_logits)
+
     all_logits = np.concatenate(logits_list, axis=0)
     labels = np.concatenate(labels_list, axis=0)
 

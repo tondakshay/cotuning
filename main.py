@@ -48,7 +48,7 @@ def get_configs():
     
 
     parser.add_argument("--seed", default=2018, type=int)
-    parser.add_argument("--batch_size", default=50, type=int)
+    parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument('--total_iters', default=300, type=int)
     parser.add_argument('--lr', default=1e-3, type=float,
                         help='Learning rate for training')
