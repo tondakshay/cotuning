@@ -128,7 +128,7 @@ def main():
         net = net.cuda()
 
     # Obtain the relationship p(y_s | y_t)
-    rel_path = os.path.join(configs.relationship_dir, f'rel_{configs.seed}.npy')
+    rel_path= os.path.join(configs.relationship_dir, f'rel_{configs.seed}.npy')
     if os.path.exists(rel_path) and ('rel' not in configs.force_recompute):
         print(f"Loading relationship from path: {configs.relationship_dir}")
         relationship = np.load(rel_path)
