@@ -43,13 +43,13 @@ def test():
         target_logits = target_logits.detach().cpu().numpy()
 
         logits_list.append(target_logits)
-   all_logits = np.concatenate(logits_list, axis=0)
-   labels = np.concatenate(labels_list, axis=0)
+    all_logits = np.concatenate(logits_list, axis=0)
+    labels = np.concatenate(labels_list, axis=0)
 
-   probabilities = softmax(all_logits)
+    probabilities = softmax(all_logits)
 
-   test_accuracy = (probabilities.argmax(axis=1) == labels).mean()
-   return test_accuracy
+    test_accuracy = (probabilities.argmax(axis=1) == labels).mean()
+return test_accuracy
 
 def main():
     test_accuracy = test()
