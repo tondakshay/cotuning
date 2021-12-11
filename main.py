@@ -220,9 +220,8 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
                 'state_dict': net.state_dict(),
                 'iter': iter_num,
             }
-        default_chk="/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/cotuning/"
         torch.save(checkpoint,
-                       os.path.join(default_chk, '{}.pkl'.format(iter_num)))
+                       os.path.join(configs.save_dir, '{}.pkl'.format(iter_num)))
         # print("Model Saved.")
 
 
