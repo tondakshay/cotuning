@@ -118,9 +118,9 @@ def get_loaders(img_dir, ann_path):
 
     samples = np.random.permutation(4113)    # size of dataset
     # samples = range(4784)
-    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:4000], transform=transforms['train'])
-    val_dataset = TACO_Dataset(img_dir, ann_path, samples[4000:4200], transform=transforms['val'])
-    test_dataset = TACO_Dataset(img_dir, ann_path, samples[4200:], transform=transforms['test'])
+    train_dataset = TACO_Dataset(img_dir, ann_path, samples[:3800], transform=transforms['train'])
+    val_dataset = TACO_Dataset(img_dir, ann_path, samples[3800:4000], transform=transforms['val'])
+    test_dataset = TACO_Dataset(img_dir, ann_path, samples[4000:], transform=transforms['test'])
     # train_dataset = TACO_Dataset(img_dir, ann_path, samples[:120], transform=transforms['train'])
     # val_dataset = TACO_Dataset(img_dir, ann_path, samples[120:140], transform=transforms['val'])
     # test_dataset = TACO_Dataset(img_dir, ann_path, samples[140:150], transform=transforms['test'])
