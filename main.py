@@ -223,6 +223,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         optimizer.zero_grad()
         if iter_num % train_len == 0:
             train_iter = iter(train_loader)
+            net.zero_grad()
 
 #These are the actual labels against which the loss has to be minimized
         train_inputs, train_labels = next(train_iter)
