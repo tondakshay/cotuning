@@ -104,7 +104,9 @@ def main():
     dir_path = "/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/TACO/data/"
     train_loader, rel_train_loader, val_loader, test_loaders = get_loaders(
             dir_path, os.path.join(dir_path, 'annotations.json'),
-            split=configs.split, limit_size=configs.limit_size)
+            split=configs.split, limit_size=configs.limit_size,
+            batch_size=configs.batch_size
+    )
 
     # Define the Neural network class and object which simultaneously predicts source
     # and target domain logits
@@ -210,7 +212,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
                    {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": 3}] #Setting learning rate 3 for now. SHould be taken from argument parser
 
     train_iter = iter(train_loader)
-    optimizer = torch.optim.SGD(params_list, lr = 3)
+    optimizer = torch.optim.SGD(params_list, lr = 0.5)
     milestones = [6000]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones, gamma=0.1)
@@ -241,7 +243,11 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
 
         imagenet_loss = - imagenet_targets * nn.LogSoftmax(dim=-1)(imagenet_outputs)
         imagenet_loss = torch.mean(torch.sum(imagenet_loss, dim=-1))
-        loss = ce_loss + 2.3 * imagenet_loss
+        loss = ce_loss + 0.1 * imagenet_loss   #2.3
+        
+        train_accuracy = (train_outputs.detach().cpu().numpy().argmax(axis=1) == train_labels.detach().cpu().numpy()).mean()
+        print(f"Iter: {iter_num} Train accuracy: {train_accuracy}")
+        
 
 #so the GPU doesn't cry on fast filling memory
         net.zero_grad()

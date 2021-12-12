@@ -126,7 +126,7 @@ def get_loaders(img_dir, ann_path, split=(3800,200,113), random_sampling=True, b
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     relationship_train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, relationship_train_loader, val_loader, test_loader
 
@@ -141,6 +141,8 @@ def get_datasets(img_dir, ann_path, split=(3800,200,113), random_sampling=True, 
     if limit_size:
         if (limit_size < dataset_size):
             dataset_size = limit_size 
+    
+    print("samples =", samples)
 
     train_size = split[0] * dataset_size // sum(split)
     val_size = split[1] * dataset_size // sum(split)

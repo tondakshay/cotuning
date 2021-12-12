@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from backbone import ResNet50_F, ResNet50_C
 from loader import get_loaders
-from main import restore_checkpoint
+from main import restore_checkpoint, set_seeds
 from logic import softmax
 
 def get_configs():
@@ -22,11 +22,15 @@ def get_configs():
     parser.add_argument("--classes_num", default=16, type=int,
             help="Number of target domain classes")
     parser.add_argument("--batch_size", default=32, type=int)
+    parser.add_argument("--seed", default=2018, type=int)
     configs = parser.parse_args()
     return configs
 
 def test():
     configs = get_configs()
+    if configs.gpu > 0:
+        torch.cuda.set_device(configs.gpu)
+    set_seeds(configs.seed)
 
     dir_path = "/scratch/eecs545f21_class_root/eecs545f21_class/akshayt/TACO/data/"
     _, _, _, test_loader = get_loaders(
@@ -69,14 +73,18 @@ def test():
         _, target_logits = model(image)
         target_logits = target_logits.detach().cpu().numpy()
 
-        print(target_logits.shape)
+        # print(target_logits.shape)
         logits_list.append(target_logits)
 
     all_logits = np.concatenate(logits_list, axis=0)
     labels = np.concatenate(labels_list, axis=0)
 
     probabilities = softmax(all_logits)
+    print("Probabilities shape:", probabilities.shape)
+    print("Labels shape:", labels.shape)
 
+    np.save("/scratch/eecs545f21_class_root/eecs545f21_class/atharvp/cotuning/test_probabilities.npy", probabilities)
+    np.save("/scratch/eecs545f21_class_root/eecs545f21_class/atharvp/cotuning/test_labels.npy", labels)
     test_accuracy = (probabilities.argmax(axis=1) == labels).mean()
     return test_accuracy
 
