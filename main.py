@@ -212,7 +212,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
                    {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": 3}] #Setting learning rate 3 for now. SHould be taken from argument parser
 
     train_iter = iter(train_loader)
-    optimizer = torch.optim.SGD(params_list, lr = 0.5)
+    optimizer = torch.optim.SGD(params_list, lr = 3)
     milestones = [6000]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones, gamma=0.1)
@@ -220,6 +220,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     for iter_num in tqdm(range(start_iter, configs.total_iters)):
 #Turning the flag on to set the network into training mode
         net.train()
+        optimizer.zero_grad()
         if iter_num % train_len == 0:
             train_iter = iter(train_loader)
 
@@ -250,8 +251,8 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         
 
 #so the GPU doesn't cry on fast filling memory
-        net.zero_grad()
-        optimizer.zero_grad()
+#         net.zero_grad()
+        
 
 
         loss.backward()
@@ -272,7 +273,7 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         # print("Model Saved.")
 
 
-
+    np.save("train_accuracies.npy", np.array(train_accuracy))
 
 
 
