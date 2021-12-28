@@ -49,8 +49,8 @@ def get_configs():
 
     parser.add_argument("--seed", default=2018, type=int)
     parser.add_argument("--batch_size", default=32, type=int)
-    parser.add_argument('--total_iters', default=300, type=int)
-    parser.add_argument('--lr', default=1e-3, type=float,
+    parser.add_argument('--total_iters', default=1188, type=int)
+    parser.add_argument('--lr', default=3, type=float,
                         help='Learning rate for training')
     parser.add_argument('--gamma', default=0.1, type=float,
                         help='Gamma value for learning rate decay')
@@ -105,7 +105,8 @@ def main():
     train_loader, rel_train_loader, val_loader, test_loaders = get_loaders(
             dir_path, os.path.join(dir_path, 'annotations.json'),
             split=configs.split, limit_size=configs.limit_size,
-            batch_size=configs.batch_size
+            batch_size=configs.batch_size,
+            random_sampling=False
     )
 
     # Define the Neural network class and object which simultaneously predicts source
@@ -164,7 +165,7 @@ def main():
             return all_logits, all_labels
         
         relt_logits_path = os.path.join(configs.logits_dir, f'relt_logits_{configs.limit_size}.npy')
-        relt_labels_path = os.path.join(configs.logits_dir, f'relt_labels_{configs.limit_size}.npy')
+        relt_labels_path = os.path.join(configs.logits_dir, f're0lt_labels_{configs.limit_size}.npy')
         relv_logits_path = os.path.join(configs.logits_dir, f'relv_logits_{configs.limit_size}.npy')
         relv_labels_path = os.path.join(configs.logits_dir, f'relv_labels_{configs.limit_size}.npy')
         os.makedirs(configs.logits_dir, exist_ok=True)
@@ -209,10 +210,10 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     params_list = [{"params": filter(lambda p: p.requires_grad, net.feature_net.parameters())},
                    {"params": filter(lambda p: p.requires_grad,
                                      net.categ_net_1.parameters())},
-                   {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": 3}] #Setting learning rate 3 for now. Should be taken from argument parser
+                   {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": configs.lr}]
 
     train_iter = iter(train_loader)
-    optimizer = torch.optim.SGD(params_list, lr = 3)
+    optimizer = torch.optim.SGD(params_list, lr = configs.lr) # lr = 3
     milestones = [6000]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones, gamma=0.1)
@@ -241,15 +242,16 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         imagenet_outputs, train_outputs = net(train_inputs)
         
 #Loss defined for the whole network is the cross entropy loss. CE loss is generally used when the problem is classification based on 'n' number of classes
-        ce_loss = nn.CrossEntropyLoss()(train_outputs, train_labels)
-
-
         # print("train_inputs_nans =", torch.nonzero(torch.isnan(train_inputs.view(-1))).sum().item())
         # print("imgnet_outputs_nans =", torch.nonzero(torch.isnan(imagenet_outputs.view(-1))).sum().item())
         # print("train_outputs_nans =", torch.nonzero(torch.isnan(train_outputs.view(-1))).sum().item())
+
+        ce_loss = nn.CrossEntropyLoss()(train_outputs, train_labels)
         imagenet_loss = - imagenet_targets * nn.LogSoftmax(dim=-1)(imagenet_outputs)
         imagenet_loss = torch.mean(torch.sum(imagenet_loss, dim=-1))
-        loss = ce_loss + 0.8 * imagenet_loss   #2.3
+
+        loss = (ce_loss + 0.8 * imagenet_loss) / configs.batch_size   #2.3
+        # loss = ce_loss / 32
         # print("ce_loss =", ce_loss)
         # print("imgnet_loss =", imagenet_loss)
         print("loss =", loss)
@@ -259,10 +261,15 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
 
         loss.backward()
 
-        if iter_num % 32 == 32-1:
+        # optimizer.step()
+        # scheduler.step()
+        # print("Optimizer step taken.")
+        # optimizer.zero_grad()
+
+        if (iter_num - 1) % train_len == 0:
             optimizer.step()
             scheduler.step()
-            print("Optimizer step taken.")
+            print("\nOptimizer step taken.\n")
             optimizer.zero_grad()
 
 # take a step based on gradient and parameters
@@ -279,7 +286,9 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         # print(net.categ_net_1.fc.weight.grad)
         if net.categ_net_1.fc.weight.grad is not None:
             print("Number of non-zero net gradients =", torch.nonzero(net.categ_net_1.fc.weight.grad.view(-1)).size())
-            print("Fraction of non-zero net gradients =", torch.nonzero(net.categ_net_1.fc.weight.grad.view(-1)).size(dim=0) / net.categ_net_1.fc.weight.grad.view(-1).size(dim=0))
+            print("Fraction of non-zero net gradients =",
+                    torch.nonzero(net.categ_net_1.fc.weight.grad.view(-1)).size(dim=0) / \
+                            net.categ_net_1.fc.weight.grad.view(-1).size(dim=0))
         print("\n ========================================= \n")
 
         checkpoint = {
