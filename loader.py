@@ -122,6 +122,7 @@ def main():
 def get_loaders(img_dir, ann_path, split=(3800,200,113), random_sampling=True, batch_size=32, limit_size=None):
     # samples = range(4784)
     train_dataset, val_dataset, test_dataset = get_datasets(img_dir, ann_path, split, random_sampling)
+    print(len(train_dataset))
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     relationship_train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)

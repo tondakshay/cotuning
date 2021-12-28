@@ -205,11 +205,11 @@ def main():
 def train(configs, train_loader, val_loader, test_loaders, net, relationship):
 
 
-    train_len = len(train_loader) - 1
+    train_len = len(train_loader)# - 1
     params_list = [{"params": filter(lambda p: p.requires_grad, net.feature_net.parameters())},
                    {"params": filter(lambda p: p.requires_grad,
                                      net.categ_net_1.parameters())},
-                   {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": 3}] #Setting learning rate 3 for now. SHould be taken from argument parser
+                   {"params": filter(lambda p: p.requires_grad, net.categ_net_2.parameters()), "lr": 3}] #Setting learning rate 3 for now. Should be taken from argument parser
 
     train_iter = iter(train_loader)
     optimizer = torch.optim.SGD(params_list, lr = 3)
@@ -217,13 +217,14 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones, gamma=0.1)
     net,start_iter = restore_checkpoint(net, configs.save_dir)
+
+    print(f"Train len = {train_len}")
+    print(f"Train_iter len = {len(train_iter)}")
     for iter_num in tqdm(range(start_iter, configs.total_iters)):
 #Turning the flag on to set the network into training mode
         net.train()
-        optimizer.zero_grad()
         if iter_num % train_len == 0:
             train_iter = iter(train_loader)
-            net.zero_grad()
 
 #These are the actual labels against which the loss has to be minimized
         train_inputs, train_labels = next(train_iter)
@@ -243,28 +244,44 @@ def train(configs, train_loader, val_loader, test_loaders, net, relationship):
         ce_loss = nn.CrossEntropyLoss()(train_outputs, train_labels)
 
 
+        # print("train_inputs_nans =", torch.nonzero(torch.isnan(train_inputs.view(-1))).sum().item())
+        # print("imgnet_outputs_nans =", torch.nonzero(torch.isnan(imagenet_outputs.view(-1))).sum().item())
+        # print("train_outputs_nans =", torch.nonzero(torch.isnan(train_outputs.view(-1))).sum().item())
         imagenet_loss = - imagenet_targets * nn.LogSoftmax(dim=-1)(imagenet_outputs)
         imagenet_loss = torch.mean(torch.sum(imagenet_loss, dim=-1))
-        loss = ce_loss + 0.1 * imagenet_loss   #2.3
+        loss = ce_loss + 0.8 * imagenet_loss   #2.3
+        # print("ce_loss =", ce_loss)
+        # print("imgnet_loss =", imagenet_loss)
+        print("loss =", loss)
         
-        train_accuracy = (train_outputs.detach().cpu().numpy().argmax(axis=1) == train_labels.detach().cpu().numpy()).mean()
-        print(f"Iter: {iter_num} Train accuracy: {train_accuracy}")
-        
-
 #so the GPU doesn't cry on fast filling memory
 #         net.zero_grad()
-        
-
 
         loss.backward()
-        optimizer.step()
+
+        if iter_num % 32 == 32-1:
+            optimizer.step()
+            scheduler.step()
+            print("Optimizer step taken.")
+            optimizer.zero_grad()
+
 # take a step based on gradient and parameters
 # scheduler.step()
-        scheduler.step()
         # print(
         #   "Iter: {}/{} ".format(
         #       iter_num, 9050)
         #   )
+
+        train_accuracy = (train_outputs.detach().cpu().numpy().argmax(axis=1) == train_labels.detach().cpu().numpy()).mean()
+        # print("train_labels:", train_labels)
+        print(f"Iter: {iter_num} Train accuracy: {train_accuracy}")
+        # print("Net gradients:")
+        # print(net.categ_net_1.fc.weight.grad)
+        if net.categ_net_1.fc.weight.grad is not None:
+            print("Number of non-zero net gradients =", torch.nonzero(net.categ_net_1.fc.weight.grad.view(-1)).size())
+            print("Fraction of non-zero net gradients =", torch.nonzero(net.categ_net_1.fc.weight.grad.view(-1)).size(dim=0) / net.categ_net_1.fc.weight.grad.view(-1).size(dim=0))
+        print("\n ========================================= \n")
+
         checkpoint = {
                 'state_dict': net.state_dict(),
                 'iter': iter_num,
